@@ -3,159 +3,245 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador Ortognático - Inspirado no Dolphin Imaging</title>
+  <title>Simulador Ortognático - Dolphin Style</title>
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #0a1f3a; color: #ddd; }
-    header { background: #1e3a5f; padding: 15px; text-align: center; border-bottom: 3px solid #3a5f9a; }
-    h1 { margin: 0; font-size: 1.9em; }
-    .container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 20px; max-width: 1600px; margin: auto; }
-    .panel { background: #112b4a; border: 1px solid #3a5f9a; border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.7); }
-    .panel h2 { margin: 0 0 12px; color: #a0c4ff; font-size: 1.3em; }
-    .image-box { position: relative; height: 420px; background: #000; border: 1px solid #555; border-radius: 6px; overflow: hidden; }
-    img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; transition: transform 0.3s; }
-    .predicted { z-index: 2; opacity: 0.85; transform-origin: 50% 85%; }
-    .upload-btn { margin-top: 10px; padding: 8px 12px; background: #3a5f9a; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .upload-btn:hover { background: #4a7ac4; }
-    .controls { margin-top: 15px; }
-    label { display: block; margin-bottom: 12px; font-size: 0.98em; }
-    input[type="range"] { width: 100%; }
-    .value { font-weight: bold; color: #ffdd57; }
-    .before-after { display: flex; gap: 10px; margin-top: 15px; }
-    .small-box { flex: 1; height: 220px; border: 1px solid #555; border-radius: 6px; overflow: hidden; }
-    .info { font-size: 0.9em; margin-top: 15px; padding: 10px; background: #1e3a5f; border-radius: 4px; }
-    footer { text-align: center; padding: 15px; color: #777; font-size: 0.85em; }
+    body { margin:0; font-family: Arial, sans-serif; background:#0a1f3a; color:#ddd; }
+    header { background:#1e3a5f; padding:15px; text-align:center; border-bottom:3px solid #3a5f9a; }
+    h1 { margin:0; font-size:1.9em; }
+
+    .tabs { display:flex; background:#112b4a; border-bottom:1px solid #3a5f9a; }
+    .tab-button { padding:12px 20px; background:none; border:none; color:#ddd; cursor:pointer; border-bottom:3px solid transparent; }
+    .tab-button.active { border-bottom:3px solid #4a9eff; background:#1e3a5f; color:white; }
+
+    .tab-content { display:none; padding:20px; max-width:1600px; margin:auto; }
+    .tab-content.active { display:block; }
+
+    .panel { background:#112b4a; border:1px solid #3a5f9a; border-radius:8px; padding:15px; margin-bottom:15px; }
+    .image-box { position:relative; height:380px; background:#000; border:2px dashed #555; border-radius:8px; overflow:hidden; transition:0.3s; }
+    .image-box.dragover { border-color:#ff5555; background:rgba(255,85,85,0.15); }
+    img { width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; transition:transform 0.3s; }
+    .predicted { z-index:2; opacity:0.85; transform-origin:50% 85%; }
+
+    .controls label { display:block; margin:12px 0; }
+    input[type=number], input[type=range] { width:100%; padding:6px; background:#1e3a5f; border:1px solid #3a5f9a; color:white; border-radius:4px; }
+    .value { font-weight:bold; color:#ffdd57; }
+
+    button.calc { background:#3a5f9a; color:white; padding:10px 15px; border:none; border-radius:4px; cursor:pointer; margin-top:10px; }
+    button.calc:hover { background:#4a7ac4; }
+
+    .suggestion { background:#1e3a5f; padding:12px; border-radius:6px; margin:10px 0; }
+    .before-after { display:flex; gap:12px; }
+    .small-box { flex:1; height:200px; border:1px solid #555; border-radius:6px; overflow:hidden; }
+
+    .info { font-size:0.9em; background:#1e3a5f; padding:12px; border-radius:4px; margin-top:10px; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Simulador de Planejamento Ortognático</h1>
-  <p>Inspirado no Dolphin Imaging • Versão educacional completa</p>
+  <h1>Simulador Profissional de Planejamento Ortognático</h1>
+  <p>Inspirado no Dolphin Imaging • Uso educacional</p>
 </header>
 
-<div class="container">
+<div class="tabs">
+  <button class="tab-button active" onclick="showTab('upload')">1. Upload de Imagens</button>
+  <button class="tab-button" onclick="showTab('cefalometria')">2. Dados Cefalométricos</button>
+  <button class="tab-button" onclick="showTab('simulacao')">3. Simulação 2D</button>
+  <button class="tab-button" onclick="showTab('resultados')">4. Resultados</button>
+</div>
 
-  <!-- Painel 1: Cefalometria -->
+<!-- Aba 1: Upload -->
+<div id="upload" class="tab-content active">
   <div class="panel">
-    <h2>1. Radiografia Cefalométrica + Traçado</h2>
-    <div class="image-box">
-      <img id="ceph-img" src="https://via.placeholder.com/600x800/111133/aaaaaa?text=Carregue+a+Cefalometria" alt="Cefalometria">
+    <h2>Upload das imagens (drag & drop ou clique)</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+      <div>
+        <h3>Radiografia Cefalométrica</h3>
+        <div class="image-box" id="ceph-box"><img id="ceph-img" src="https://via.placeholder.com/600x800/111133/aaaaaa?text=Arraste+a+Cefalometria"><div class="upload-area" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#aaa;">Arraste aqui ou clique</div></div>
+        <input type="file" id="ceph-upload" accept="image/*" style="display:none;">
+      </div>
+      <div>
+        <h3>Foto Lateral Original</h3>
+        <div class="image-box" id="photo-box"><img id="original-photo" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Arraste+a+Foto+Lateral"><div class="upload-area" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#aaa;">Arraste aqui ou clique</div></div>
+        <input type="file" id="photo-upload" accept="image/*" style="display:none;">
+      </div>
     </div>
-    <input type="file" id="ceph-upload" accept="image/*" style="display:none;">
-    <button class="upload-btn" onclick="document.getElementById('ceph-upload').click()">📤 Carregar Cefalometria</button>
-    <div class="info">Recomendado: imagem com traçado cefalométrico já feito (Steiner, McNamara, etc.)</div>
   </div>
+</div>
 
-  <!-- Painel 2: Foto Lateral + Simulação -->
+<!-- Aba 2: Dados Cefalométricos -->
+<div id="cefalometria" class="tab-content">
   <div class="panel">
-    <h2>2. Foto Lateral + Perfil Predito</h2>
-    <div class="image-box">
-      <img id="original-photo" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Foto+Lateral+Original" alt="Original">
-      <img id="predicted-photo" class="predicted" src="https://via.placeholder.com/500x700/334466/88aaff?text=Perfil+Predito" alt="Predito">
+    <h2>Inserir valores cefalométricos</h2>
+    <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:15px;">
+      <div>
+        <label>SNA (°): <span class="value" id="sna-val">82</span></label>
+        <input type="number" id="sna" value="82" step="0.1">
+      </div>
+      <div>
+        <label>SNB (°): <span class="value" id="snb-val">80</span></label>
+        <input type="number" id="snb" value="80" step="0.1">
+      </div>
+      <div>
+        <label>ANB atual (°): <span class="value" id="anb-val">2</span></label>
+        <input type="number" id="anb" value="2" step="0.1">
+      </div>
+      <div>
+        <label>ANB desejado (°): <span class="value" id="anb-des-val">2</span></label>
+        <input type="number" id="anb-des" value="2" step="0.1">
+      </div>
+    </div>
+
+    <button class="calc" onclick="calcularSugestao()">🔍 Calcular Sugestão de Movimentos (mm)</button>
+
+    <div id="sugestao-box" class="suggestion" style="display:none;">
+      <strong>Sugestão de movimentos:</strong><br>
+      <span id="sug-maxila"></span><br>
+      <span id="sug-mandibula"></span><br>
+      <span id="sug-anb"></span>
+      <div class="info">Regra aproximada: \~0.9 mm por grau de discrepância angular (média clínica). Use como referência inicial.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Aba 3: Simulação -->
+<div id="simulacao" class="tab-content">
+  <div class="panel">
+    <h2>Simulação de Perfil (Antes × Depois)</h2>
+    <div class="image-box" style="height:420px;">
+      <img id="original-photo-sim" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Foto+Original">
+      <img id="predicted-photo" class="predicted" src="https://via.placeholder.com/500x700/334466/88aaff?text=Perfil+Predito">
     </div>
 
     <div class="controls">
-      <label>Avanço Maxila (mm): <span class="value" id="max-val">0</span><br>
-        <input type="range" min="-12" max="12" value="0" id="maxila">
-      </label>
-      <label>Avanço Mandíbula (mm): <span class="value" id="mand-val">0</span><br>
-        <input type="range" min="-15" max="15" value="0" id="mandibula">
-      </label>
-      <label>Genioplastia (mm): <span class="value" id="gen-val">0</span><br>
-        <input type="range" min="-10" max="10" value="0" id="genio">
-      </label>
-    </div>
-
-    <input type="file" id="photo-upload" accept="image/*" style="display:none;">
-    <input type="file" id="pred-upload" accept="image/*" style="display:none;">
-    <button class="upload-btn" onclick="document.getElementById('photo-upload').click()">📤 Carregar Foto Lateral Original</button>
-    <button class="upload-btn" onclick="document.getElementById('pred-upload').click()">📤 Carregar Foto Predita (opcional)</button>
-  </div>
-
-  <!-- Painel 3: Antes × Depois + Resultados -->
-  <div class="panel">
-    <h2>3. Antes × Depois + Resultados</h2>
-    <div class="before-after">
-      <div class="small-box">
-        <img id="before-small" src="https://via.placeholder.com/300x220/222244/bbbbbb?text=Antes" alt="Antes">
-      </div>
-      <div class="small-box">
-        <img id="after-small" src="https://via.placeholder.com/300x220/334466/88aaff?text=Depois" alt="Depois">
-      </div>
-    </div>
-
-    <div class="info">
-      <strong>Movimentos simulados:</strong><br>
-      Maxila: <span id="max-result">0 mm</span><br>
-      Mandíbula: <span id="mand-result">0 mm</span><br>
-      Genioplastia: <span id="gen-result">0 mm</span><br><br>
-      <em>Nota: Simulação aproximada de tecidos moles. Não substitui software certificado.</em>
+      <label>Maxila (mm): <span class="value" id="max-val">0</span><br><input type="range" min="-15" max="15" value="0" id="maxila"></label>
+      <label>Mandíbula (mm): <span class="value" id="mand-val">0</span><br><input type="range" min="-15" max="15" value="0" id="mandibula"></label>
+      <label>Genioplastia (mm): <span class="value" id="gen-val">0</span><br><input type="range" min="-12" max="12" value="0" id="genio"></label>
     </div>
   </div>
-
 </div>
 
-<footer>
-  Uso educacional apenas • Respeite normas éticas e LGPD • Imagens de pacientes devem estar anonimizadas.
+<!-- Aba 4: Resultados -->
+<div id="resultados" class="tab-content">
+  <div class="panel">
+    <h2>Antes × Depois</h2>
+    <div class="before-after">
+      <div class="small-box"><img id="before-small" src="https://via.placeholder.com/300x200/222244/bbbbbb?text=Antes"></div>
+      <div class="small-box"><img id="after-small" src="https://via.placeholder.com/300x200/334466/88aaff?text=Depois"></div>
+    </div>
+    <div class="info" id="resumo-resultado">
+      Preencha os dados cefalométricos e ajuste os sliders para ver o planejamento.
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center; padding:15px; color:#777; font-size:0.85em;">
+  Uso educacional apenas • Não substitui software médico certificado (Dolphin, NemoFab, etc.)
 </footer>
 
 <script>
-  // Upload handlers
-  document.getElementById('ceph-upload').addEventListener('change', function(e) {
-    if (e.target.files[0]) {
-      document.getElementById('ceph-img').src = URL.createObjectURL(e.target.files[0]);
+// Navegação de abas
+function showTab(tabName) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  document.querySelector(`button[onclick="showTab('${tabName}')"]`).classList.add('active');
+}
+
+// Drag & Drop
+function setupDragDrop(boxId, imgId, fileInputId, targetSimId = null) {
+  const box = document.getElementById(boxId);
+  const img = document.getElementById(imgId);
+  const fileInput = document.getElementById(fileInputId);
+
+  box.addEventListener('click', () => fileInput.click());
+
+  ['dragenter','dragover'].forEach(ev => box.addEventListener(ev, e => { e.preventDefault(); box.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(ev => box.addEventListener(ev, e => { e.preventDefault(); box.classList.remove('dragover'); }));
+
+  box.addEventListener('drop', e => {
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      if (targetSimId) document.getElementById(targetSimId).src = url;
+      if (boxId === 'photo-box') {
+        document.getElementById('before-small').src = url;
+        document.getElementById('original-photo-sim').src = url;
+      }
     }
   });
 
-  document.getElementById('photo-upload').addEventListener('change', function(e) {
-    if (e.target.files[0]) {
-      const url = URL.createObjectURL(e.target.files[0]);
-      document.getElementById('original-photo').src = url;
-      document.getElementById('before-small').src = url;
+  fileInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      if (targetSimId) document.getElementById(targetSimId).src = url;
+      if (boxId === 'photo-box') {
+        document.getElementById('before-small').src = url;
+        document.getElementById('original-photo-sim').src = url;
+      }
     }
   });
+}
 
-  document.getElementById('pred-upload').addEventListener('change', function(e) {
-    if (e.target.files[0]) {
-      document.getElementById('predicted-photo').src = URL.createObjectURL(e.target.files[0]);
-      document.getElementById('after-small').src = URL.createObjectURL(e.target.files[0]);
-    }
-  });
+setupDragDrop('ceph-box', 'ceph-img', 'ceph-upload');
+setupDragDrop('photo-box', 'original-photo', 'photo-upload', 'original-photo-sim');
 
-  // Sliders
-  const maxSlider = document.getElementById('maxila');
-  const mandSlider = document.getElementById('mandibula');
-  const genSlider = document.getElementById('genio');
-  const predImg = document.getElementById('predicted-photo');
+// Cálculo de sugestão
+function calcularSugestao() {
+  const sna = parseFloat(document.getElementById('sna').value) || 82;
+  const snb = parseFloat(document.getElementById('snb').value) || 80;
+  const anbAtual = parseFloat(document.getElementById('anb').value) || 2;
+  const anbDesejado = parseFloat(document.getElementById('anb-des').value) || 2;
 
-  function update() {
-    const max = parseFloat(maxSlider.value);
-    const mand = parseFloat(mandSlider.value);
-    const gen = parseFloat(genSlider.value);
+  const diffSNA = 82 - sna;
+  const diffSNB = 80 - snb;
+  const diffANB = anbDesejado - anbAtual;
 
-    // Atualiza valores exibidos
-    document.getElementById('max-val').textContent = max;
-    document.getElementById('mand-val').textContent = mand;
-    document.getElementById('gen-val').textContent = gen;
-    document.getElementById('max-result').textContent = max + ' mm';
-    document.getElementById('mand-result').textContent = mand + ' mm';
-    document.getElementById('gen-result').textContent = gen + ' mm';
+  const sugMaxila = (diffSNA * 0.9).toFixed(1);
+  const sugMand = (diffSNB * 0.9).toFixed(1);
 
-    // Simulação de morphing (movimento + leve escala)
-    const tx = max * 6 + mand * -5 + gen * 8;
-    const ty = max * -1.5 + mand * 4 + gen * 2;
-    const scale = 1 + (Math.abs(max + mand + gen) * 0.008);
+  document.getElementById('sug-maxila').innerHTML = `Maxila: <strong>\( {sugMaxila > 0 ? '+' : ''} \){sugMaxila} mm</strong> (avanço)`;
+  document.getElementById('sug-mandibula').innerHTML = `Mandíbula: <strong>\( {sugMand > 0 ? '+' : ''} \){sugMand} mm</strong> (avanço)`;
+  document.getElementById('sug-anb').innerHTML = `ANB: ajuste de <strong>\( {diffANB > 0 ? '+' : ''} \){diffANB}°</strong>`;
 
-    predImg.style.transform = `translate(${tx}px, \( {ty}px) scale( \){scale})`;
-  }
+  document.getElementById('sugestao-box').style.display = 'block';
 
-  maxSlider.addEventListener('input', update);
-  mandSlider.addEventListener('input', update);
-  genSlider.addEventListener('input', update);
+  // Aplica automaticamente nos sliders
+  document.getElementById('maxila').value = sugMaxila;
+  document.getElementById('mandibula').value = sugMand;
+  updateSimulation();
+}
 
-  // Inicializa
-  update();
+// Atualiza simulação
+const maxSlider = document.getElementById('maxila');
+const mandSlider = document.getElementById('mandibula');
+const genSlider = document.getElementById('genio');
+const predImg = document.getElementById('predicted-photo');
+
+function updateSimulation() {
+  const max = parseFloat(maxSlider.value);
+  const mand = parseFloat(mandSlider.value);
+  const gen = parseFloat(genSlider.value);
+
+  document.getElementById('max-val').textContent = max;
+  document.getElementById('mand-val').textContent = mand;
+  document.getElementById('gen-val').textContent = gen;
+
+  const tx = max * 6 + mand * -5 + gen * 8;
+  const ty = max * -1.5 + mand * 4 + gen * 2;
+  const scale = 1 + (Math.abs(max + mand + gen) * 0.008);
+
+  predImg.style.transform = `translate(${tx}px, \( {ty}px) scale( \){scale})`;
+
+  // Atualiza miniatura "Depois"
+  document.getElementById('after-small').src = predImg.src || "https://via.placeholder.com/300x200/334466/88aaff?text=Depois";
+}
+
+[maxSlider, mandSlider, genSlider].forEach(slider => slider.addEventListener('input', updateSimulation));
+updateSimulation();
 </script>
-
 </body>
 </html>
