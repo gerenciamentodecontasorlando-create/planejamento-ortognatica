@@ -1,175 +1,352 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador Ortognático Pro</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest/dist/face-api.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulador Ortognático • Futurístico Demo</title>
   <style>
-    body { margin:0; font-family:Arial,sans-serif; background:#0a1f3a; color:#e0e0e0; }
-    header { background:#1e3a5f; padding:15px; text-align:center; border-bottom:3px solid #3a5f9a; }
-    .tabs { display:flex; background:#112b4a; flex-wrap:wrap; }
-    .tab-button { padding:14px 25px; background:none; border:none; color:#ccc; cursor:pointer; }
-    .tab-button.active { background:#1e3a5f; color:white; border-bottom:4px solid #4a9eff; }
-    .tab-content { display:none; padding:20px; max-width:1600px; margin:auto; }
-    .tab-content.active { display:block; }
-    .panel { background:#112b4a; border:1px solid #3a5f9a; border-radius:8px; padding:18px; margin-bottom:15px; }
-    .image-box { height:420px; border:2px dashed #666; border-radius:8px; overflow:hidden; position:relative; }
-    canvas { width:100%; height:100%; }
-    .controls { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:15px; }
-    label { display:block; margin:10px 0 5px; font-weight:bold; }
-    input[type=range] { width:100%; }
-    button { padding:10px 18px; background:#3a5f9a; color:white; border:none; border-radius:6px; cursor:pointer; margin:5px; }
-    button:hover { background:#4a7ac4; }
-    .info { background:#1e3a5f; padding:12px; border-radius:6px; margin-top:10px; font-size:0.95em; }
+    :root {
+      --neon-blue: #00f0ff;
+      --neon-purple: #d400ff;
+      --dark-bg: #0a0015;
+      --panel-bg: rgba(10, 0, 30, 0.7);
+      --glow: 0 0 15px rgba(0, 240, 255, 0.6), 0 0 30px rgba(212, 0, 255, 0.4);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: linear-gradient(135deg, #0a0015, #15002a);
+      color: #e0f0ff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    header {
+      background: rgba(10, 0, 30, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 1.2rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.3);
+      box-shadow: var(--glow);
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      background: rgba(5, 0, 20, 0.6);
+      backdrop-filter: blur(8px);
+      padding: 0.8rem;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    .tab-button {
+      padding: 0.9rem 2rem;
+      margin: 0 0.5rem;
+      background: transparent;
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 30px;
+      color: var(--neon-blue);
+      cursor: pointer;
+      transition: all 0.4s;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .tab-button:hover {
+      background: rgba(0, 240, 255, 0.1);
+      box-shadow: var(--glow);
+      transform: translateY(-3px);
+    }
+
+    .tab-button.active {
+      background: linear-gradient(45deg, rgba(0, 240, 255, 0.3), rgba(212, 0, 255, 0.3));
+      border-color: var(--neon-purple);
+      color: white;
+      box-shadow: var(--glow);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .tab-content.active { display: block; }
+
+    .panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: var(--glow);
+      margin-bottom: 2rem;
+    }
+
+    .image-container {
+      position: relative;
+      height: 520px;
+      background: rgba(0,0,0,0.6);
+      border: 2px dashed rgba(0, 240, 255, 0.5);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.4s;
+    }
+
+    .image-container:hover {
+      border-color: var(--neon-purple);
+      box-shadow: 0 0 30px rgba(212, 0, 255, 0.4);
+    }
+
+    img, canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.6s ease;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+
+    label {
+      color: var(--neon-blue);
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
+      border-radius: 5px;
+      appearance: none;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 0 15px var(--neon-blue);
+      cursor: pointer;
+    }
+
+    .value {
+      color: var(--neon-purple);
+      font-weight: bold;
+      margin-left: 10px;
+    }
+
+    .btn-neon {
+      padding: 0.9rem 2rem;
+      background: transparent;
+      border: 2px solid var(--neon-blue);
+      color: var(--neon-blue);
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.4s;
+      margin: 0.5rem;
+    }
+
+    .btn-neon:hover {
+      background: var(--neon-blue);
+      color: black;
+      box-shadow: var(--glow);
+      transform: scale(1.05);
+    }
+
+    .info {
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Simulador Ortognático Pro</h1>
-  <p>Landmarks • Animação • Relatório PDF • Morphing Avançado</p>
+  <h1>Simulador Ortognático • Neo Horizon</h1>
+  <p>Planejamento Cirúrgico • Morphing Holográfico • Demo Futurística</p>
 </header>
 
 <div class="tabs">
-  <button class="tab-button active" onclick="showTab('upload')">1. Upload</button>
-  <button class="tab-button" onclick="showTab('cefalometria')">2. Cefalometria</button>
-  <button class="tab-button" onclick="showTab('planejamento')">3. Planejamento</button>
-  <button class="tab-button" onclick="showTab('simulacao')">4. Simulação</button>
+  <button class="tab-button active" onclick="showTab('upload')">UPLOAD</button>
+  <button class="tab-button" onclick="showTab('planejamento')">PLANEJAMENTO</button>
+  <button class="tab-button" onclick="showTab('simulacao')">SIMULAÇÃO</button>
 </div>
 
 <div id="upload" class="tab-content active">
   <div class="panel">
-    <h2>Upload de Fotos</h2>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-      <div>
-        <h3>Foto Lateral</h3>
-        <div class="image-box" id="lateral-box"><img id="lateral-img" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Foto+Lateral"></div>
-        <input type="file" id="lateral-upload" accept="image/*" style="display:none;">
-      </div>
-      <div>
-        <h3>Foto Frontal (opcional)</h3>
-        <div class="image-box" id="frontal-box"><img id="frontal-img" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Foto+Frontal"></div>
-        <input type="file" id="frontal-upload" accept="image/*" style="display:none;">
-      </div>
+    <h2>Carregar Perfil do Paciente</h2>
+    <div class="image-container" id="upload-area">
+      <img id="original-photo" src="https://via.placeholder.com/600x800/0a0015/00f0ff?text=ARRASTE+OU+CLIQUE+AQUI" alt="Foto lateral">
+    </div>
+    <input type="file" id="photo-input" accept="image/*" style="display:none;">
+    <div style="text-align:center; margin-top:1.5rem;">
+      <button class="btn-neon" onclick="document.getElementById('photo-input').click()">SELECIONAR FOTO</button>
     </div>
   </div>
 </div>
 
-<div id="cefalometria" class="tab-content"> <!-- campos cefalométricos aqui --> </div>
-
 <div id="planejamento" class="tab-content">
   <div class="panel">
-    <h2>Movimentos Cirúrgicos</h2>
+    <h2>Controles de Simulação</h2>
     <div class="controls">
-      <label>Maxila (mm): <span id="max-val">0</span> <input type="range" min="-15" max="15" value="0" id="maxila"></label>
-      <label>Mandíbula (mm): <span id="mand-val">0</span> <input type="range" min="-15" max="15" value="0" id="mandibula"></label>
-      <label>Genioplastia (mm): <span id="gen-val">0</span> <input type="range" min="-12" max="12" value="0" id="genio"></label>
+      <div>
+        <label>Avanço Maxila (mm) <span class="value" id="max-val">0</span></label>
+        <input type="range" min="-15" max="15" value="0" step="0.5" id="maxila">
+      </div>
+      <div>
+        <label>Avanço Mandíbula (mm) <span class="value" id="mand-val">0</span></label>
+        <input type="range" min="-15" max="15" value="0" step="0.5" id="mandibula">
+      </div>
+      <div>
+        <label>Genioplastia (mm) <span class="value" id="gen-val">0</span></label>
+        <input type="range" min="-12" max="12" value="0" step="0.5" id="genio">
+      </div>
     </div>
-    <button onclick="animateTransition()">▶ Animar Antes → Depois</button>
-    <button onclick="gerarRelatorioPDF()">📄 Gerar Relatório PDF Profissional</button>
+    <div style="text-align:center; margin-top:2rem;">
+      <button class="btn-neon" onclick="demoRapida()">DEMONSTRAÇÃO RÁPIDA</button>
+      <button class="btn-neon" onclick="resetAll()">RESET</button>
+    </div>
   </div>
 </div>
 
 <div id="simulacao" class="tab-content">
   <div class="panel">
-    <h2>Simulação com Landmarks</h2>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+    <h2>Visualização Holográfica</h2>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px,1fr)); gap:2rem;">
       <div>
         <h3>Antes</h3>
-        <canvas id="before-canvas" width="500" height="600"></canvas>
+        <div class="image-container">
+          <img id="before-preview" src="https://via.placeholder.com/500x700/0a0015/00f0ff?text=Antes">
+        </div>
       </div>
       <div>
-        <h3>Depois (com landmarks)</h3>
-        <canvas id="after-canvas" width="500" height="600"></canvas>
+        <h3>Depois (Simulado)</h3>
+        <div class="image-container">
+          <canvas id="after-canvas"></canvas>
+        </div>
       </div>
+    </div>
+    <div style="text-align:center; margin-top:2rem;">
+      <button class="btn-neon" onclick="exportarImagem()">DOWNLOAD RESULTADO</button>
     </div>
   </div>
 </div>
 
 <script>
-// Carrega modelos do face-api (pode demorar um pouco na primeira vez)
-async function loadFaceModels() {
-  await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model');
-  await faceapi.nets.faceLandmark68Net.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model');
-}
-
-let lateralImg = null;
-let landmarks = null;
-
-async function detectLandmarks() {
-  const img = document.getElementById('lateral-img');
-  if (!img.src || img.src.includes('placeholder')) return;
-
-  const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-  if (detection) {
-    landmarks = detection.landmarks;
-    drawLandmarks();
-  }
-}
-
-function drawLandmarks() {
-  // Implementação simplificada - desenha pontos principais (mento, pogonion, subnasale, etc.)
-  // Pode ser expandida
-}
-
-function updateMorph() {
-  // Aqui vai o morphing guiado por landmarks (versão simplificada)
-  console.log("Atualizando morphing com landmarks...");
-}
-
-async function gerarRelatorioPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-
-  doc.setFontSize(20);
-  doc.text("Relatório de Planejamento Ortognático", 20, 20);
-  doc.setFontSize(12);
-  doc.text("Data: " + new Date().toLocaleDateString('pt-BR'), 20, 35);
-  doc.text("Movimentos planejados:", 20, 50);
-  doc.text(`Maxila: ${document.getElementById('maxila').value} mm`, 30, 60);
-  doc.text(`Mandíbula: ${document.getElementById('mandibula').value} mm`, 30, 70);
-  doc.text(`Genioplastia: ${document.getElementById('genio').value} mm`, 30, 80);
-
-  // Adiciona imagem do canvas (simplificado)
-  const afterCanvas = document.getElementById('after-canvas');
-  if (afterCanvas) {
-    doc.addImage(afterCanvas.toDataURL('image/png'), 'PNG', 20, 100, 80, 100);
-  }
-
-  doc.text("Observações: Simulação educacional aproximada. Consulte profissional qualificado.", 20, 220);
-  doc.save("Planejamento_Ortognatico.pdf");
-}
-
-function animateTransition() {
-  alert("Animação simulada (em versão completa seria com requestAnimationFrame interpolando os movimentos)");
-}
-
-function showTab(tab) {
+function showTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-  document.getElementById(tab).classList.add('active');
-  document.querySelector(`button[onclick="showTab('${tab}')"]`).classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+  document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
 }
 
-// Configuração de uploads (simplificada)
-document.getElementById('lateral-box').addEventListener('click', () => document.getElementById('lateral-upload').click());
-document.getElementById('lateral-upload').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (file) {
-    const url = URL.createObjectURL(file);
-    document.getElementById('lateral-img').src = url;
-    lateralImg = new Image();
-    lateralImg.src = url;
-    lateralImg.onload = () => {
-      detectLandmarks();
-    };
-  }
+let originalImage = null;
+const canvas = document.getElementById('after-canvas');
+const ctx = canvas.getContext('2d');
+
+function loadImage(file) {
+  const url = URL.createObjectURL(file);
+  document.getElementById('original-photo').src = url;
+  document.getElementById('before-preview').src = url;
+
+  originalImage = new Image();
+  originalImage.src = url;
+  originalImage.onload = () => {
+    canvas.width = originalImage.width;
+    canvas.height = originalImage.height;
+    updateSimulation();
+  };
+}
+
+document.getElementById('photo-input').addEventListener('change', e => {
+  if (e.target.files[0]) loadImage(e.target.files[0]);
 });
 
-loadFaceModels();
+document.getElementById('upload-area').addEventListener('dragover', e => e.preventDefault());
+document.getElementById('upload-area').addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+});
 
+function updateSimulation() {
+  if (!originalImage) return;
+
+  const max = parseFloat(document.getElementById('maxila').value);
+  const mand = parseFloat(document.getElementById('mandibula').value);
+  const gen = parseFloat(document.getElementById('genio').value);
+
+  document.getElementById('max-val').textContent = max.toFixed(1);
+  document.getElementById('mand-val').textContent = mand.toFixed(1);
+  document.getElementById('gen-val').textContent = gen.toFixed(1);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(originalImage, 0, 0);
+
+  // Morphing suave futurístico
+  const tx = max * 8 + mand * -6 + gen * 9;
+  const ty = max * -2 + mand * 3 + gen * 1;
+  const scale = 1 + (Math.abs(max + mand + gen) * 0.008);
+
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height * 0.85);
+  ctx.scale(scale, scale);
+  ctx.translate(-canvas.width / 2, -canvas.height * 0.85);
+  ctx.globalAlpha = 0.92;
+  ctx.drawImage(originalImage, tx, ty);
+  ctx.restore();
+}
+
+['maxila','mandibula','genio'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateSimulation);
+});
+
+function resetAll() {
+  document.querySelectorAll('#maxila, #mandibula, #genio').forEach(el => el.value = 0);
+  updateSimulation();
+}
+
+function demoRapida() {
+  document.getElementById('maxila').value = 6;
+  document.getElementById('mandibula').value = 8;
+  document.getElementById('genio').value = 4;
+  updateSimulation();
+}
+
+function exportarImagem() {
+  const link = document.createElement('a');
+  link.download = 'simulacao-futuristica.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+updateSimulation();
 </script>
 </body>
 </html>
