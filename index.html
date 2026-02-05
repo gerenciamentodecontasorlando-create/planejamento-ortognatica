@@ -1,167 +1,160 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Simulador Simples - Planejamento Ortognático (estilo Dolphin)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador Ortognático - Inspirado no Dolphin Imaging</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0a1f3a;
-      color: #e0e0e0;
-    }
-    header {
-      background: #1e3a5f;
-      padding: 10px 20px;
-      text-align: center;
-      border-bottom: 2px solid #3a5f9a;
-    }
-    h1 { margin: 0; font-size: 1.8em; }
-    .container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      padding: 20px;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-    .panel {
-      background: #112b4a;
-      border: 1px solid #3a5f9a;
-      border-radius: 6px;
-      padding: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    }
-    .panel h2 {
-      margin: 0 0 10px;
-      font-size: 1.3em;
-      color: #a0c0ff;
-    }
-    .image-container {
-      position: relative;
-      height: 380px;
-      background: #000;
-      overflow: hidden;
-      border: 1px solid #555;
-      border-radius: 4px;
-    }
-    .image {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      transition: transform 0.4s ease;
-    }
-    .overlay {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      pointer-events: none;
-    }
-    .controls {
-      margin-top: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    label {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.95em;
-    }
-    input[type="range"] {
-      flex: 1;
-    }
-    .before-after {
-      display: flex;
-      justify-content: space-around;
-      margin-top: 15px;
-    }
-    .small-img {
-      width: 48%;
-      border: 1px solid #444;
-      border-radius: 4px;
-    }
-    footer {
-      text-align: center;
-      padding: 10px;
-      font-size: 0.85em;
-      color: #888;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: #0a1f3a; color: #ddd; }
+    header { background: #1e3a5f; padding: 15px; text-align: center; border-bottom: 3px solid #3a5f9a; }
+    h1 { margin: 0; font-size: 1.9em; }
+    .container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; padding: 20px; max-width: 1600px; margin: auto; }
+    .panel { background: #112b4a; border: 1px solid #3a5f9a; border-radius: 8px; padding: 15px; box-shadow: 0 6px 15px rgba(0,0,0,0.7); }
+    .panel h2 { margin: 0 0 12px; color: #a0c4ff; font-size: 1.3em; }
+    .image-box { position: relative; height: 420px; background: #000; border: 1px solid #555; border-radius: 6px; overflow: hidden; }
+    img { width: 100%; height: 100%; object-fit: contain; position: absolute; top: 0; left: 0; transition: transform 0.3s; }
+    .predicted { z-index: 2; opacity: 0.85; transform-origin: 50% 85%; }
+    .upload-btn { margin-top: 10px; padding: 8px 12px; background: #3a5f9a; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .upload-btn:hover { background: #4a7ac4; }
+    .controls { margin-top: 15px; }
+    label { display: block; margin-bottom: 12px; font-size: 0.98em; }
+    input[type="range"] { width: 100%; }
+    .value { font-weight: bold; color: #ffdd57; }
+    .before-after { display: flex; gap: 10px; margin-top: 15px; }
+    .small-box { flex: 1; height: 220px; border: 1px solid #555; border-radius: 6px; overflow: hidden; }
+    .info { font-size: 0.9em; margin-top: 15px; padding: 10px; background: #1e3a5f; border-radius: 4px; }
+    footer { text-align: center; padding: 15px; color: #777; font-size: 0.85em; }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Simulador Básico de Planejamento Ortognático (inspirado no Dolphin Imaging)</h1>
-  <p>Arraste os sliders para simular movimentos cirúrgicos (Maxila, Mandíbula e Genioplastia)</p>
+  <h1>Simulador de Planejamento Ortognático</h1>
+  <p>Inspirado no Dolphin Imaging • Versão educacional completa</p>
 </header>
 
 <div class="container">
 
-  <!-- Painel 1: Cefalometria + Traçado -->
+  <!-- Painel 1: Cefalometria -->
   <div class="panel">
     <h2>1. Radiografia Cefalométrica + Traçado</h2>
-    <div class="image-container">
-      <img src="https://via.placeholder.com/600x800/111133/aaaaaa?text=Cefalometria+Lateral+com+Traçado+(Steiner)" alt="Cefalometria com traçado" class="image" id="ceph">
-      <!-- Aqui poderia ter SVG do traçado real, mas usamos placeholder -->
+    <div class="image-box">
+      <img id="ceph-img" src="https://via.placeholder.com/600x800/111133/aaaaaa?text=Carregue+a+Cefalometria" alt="Cefalometria">
     </div>
+    <input type="file" id="ceph-upload" accept="image/*" style="display:none;">
+    <button class="upload-btn" onclick="document.getElementById('ceph-upload').click()">📤 Carregar Cefalometria</button>
+    <div class="info">Recomendado: imagem com traçado cefalométrico já feito (Steiner, McNamara, etc.)</div>
   </div>
 
-  <!-- Painel 2: Foto Lateral + Perfil Predito -->
+  <!-- Painel 2: Foto Lateral + Simulação -->
   <div class="panel">
-    <h2>2. Foto Lateral + Simulação de Perfil</h2>
-    <div class="image-container">
-      <img src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Foto+Lateral+Original" alt="Foto original" class="image" id="original" style="position:absolute; z-index:1;">
-      <img src="https://via.placeholder.com/500x700/334466/88aaff?text=Perfil+Predito+(morphing)" alt="Perfil simulado" class="image" id="predicted" style="position:absolute; z-index:2; opacity:0.7; transform-origin: bottom;">
+    <h2>2. Foto Lateral + Perfil Predito</h2>
+    <div class="image-box">
+      <img id="original-photo" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Foto+Lateral+Original" alt="Original">
+      <img id="predicted-photo" class="predicted" src="https://via.placeholder.com/500x700/334466/88aaff?text=Perfil+Predito" alt="Predito">
     </div>
 
     <div class="controls">
-      <label>Avanço/Recuo Maxila: <input type="range" min="-10" max="10" value="0" id="maxila"></label>
-      <label>Avanço/Recuo Mandíbula: <input type="range" min="-15" max="15" value="0" id="mandibula"></label>
-      <label>Genioplastia (deslize): <input type="range" min="-8" max="8" value="0" id="genio"></label>
+      <label>Avanço Maxila (mm): <span class="value" id="max-val">0</span><br>
+        <input type="range" min="-12" max="12" value="0" id="maxila">
+      </label>
+      <label>Avanço Mandíbula (mm): <span class="value" id="mand-val">0</span><br>
+        <input type="range" min="-15" max="15" value="0" id="mandibula">
+      </label>
+      <label>Genioplastia (mm): <span class="value" id="gen-val">0</span><br>
+        <input type="range" min="-10" max="10" value="0" id="genio">
+      </label>
     </div>
 
+    <input type="file" id="photo-upload" accept="image/*" style="display:none;">
+    <input type="file" id="pred-upload" accept="image/*" style="display:none;">
+    <button class="upload-btn" onclick="document.getElementById('photo-upload').click()">📤 Carregar Foto Lateral Original</button>
+    <button class="upload-btn" onclick="document.getElementById('pred-upload').click()">📤 Carregar Foto Predita (opcional)</button>
+  </div>
+
+  <!-- Painel 3: Antes × Depois + Resultados -->
+  <div class="panel">
+    <h2>3. Antes × Depois + Resultados</h2>
     <div class="before-after">
-      <img src="https://via.placeholder.com/280x380/111133/aaaaaa?text=Antes" class="small-img">
-      <img src="https://via.placeholder.com/280x380/334466/88aaff?text=Depois" class="small-img">
+      <div class="small-box">
+        <img id="before-small" src="https://via.placeholder.com/300x220/222244/bbbbbb?text=Antes" alt="Antes">
+      </div>
+      <div class="small-box">
+        <img id="after-small" src="https://via.placeholder.com/300x220/334466/88aaff?text=Depois" alt="Depois">
+      </div>
+    </div>
+
+    <div class="info">
+      <strong>Movimentos simulados:</strong><br>
+      Maxila: <span id="max-result">0 mm</span><br>
+      Mandíbula: <span id="mand-result">0 mm</span><br>
+      Genioplastia: <span id="gen-result">0 mm</span><br><br>
+      <em>Nota: Simulação aproximada de tecidos moles. Não substitui software certificado.</em>
     </div>
   </div>
 
 </div>
 
 <footer>
-  Simulação educativa apenas — não substitui software médico certificado como Dolphin Imaging.<br>
-  Use imagens reais de pacientes apenas com autorização ética.
+  Uso educacional apenas • Respeite normas éticas e LGPD • Imagens de pacientes devem estar anonimizadas.
 </footer>
 
 <script>
-  const maxilaSlider = document.getElementById('maxila');
-  const mandibulaSlider = document.getElementById('mandibula');
-  const genioSlider = document.getElementById('genio');
-  const predicted = document.getElementById('predicted');
+  // Upload handlers
+  document.getElementById('ceph-upload').addEventListener('change', function(e) {
+    if (e.target.files[0]) {
+      document.getElementById('ceph-img').src = URL.createObjectURL(e.target.files[0]);
+    }
+  });
 
-  function updateSimulation() {
-    const m = parseFloat(maxilaSlider.value);
-    const n = parseFloat(mandibulaSlider.value);
-    const g = parseFloat(genioSlider.value);
+  document.getElementById('photo-upload').addEventListener('change', function(e) {
+    if (e.target.files[0]) {
+      const url = URL.createObjectURL(e.target.files[0]);
+      document.getElementById('original-photo').src = url;
+      document.getElementById('before-small').src = url;
+    }
+  });
 
-    // Simula morphing aproximado com translate + scale leve
-    const transform = `
-      translateX(\( {m * 8}px) translateY( \){m * -2}px)
-      translateX(\( {n * -6}px) translateY( \){n * 3}px)
-      translateX(${g * 10}px)
-      scale(1.${Math.abs(m+n+g)/20})
-    `;
-    predicted.style.transform = transform;
+  document.getElementById('pred-upload').addEventListener('change', function(e) {
+    if (e.target.files[0]) {
+      document.getElementById('predicted-photo').src = URL.createObjectURL(e.target.files[0]);
+      document.getElementById('after-small').src = URL.createObjectURL(e.target.files[0]);
+    }
+  });
+
+  // Sliders
+  const maxSlider = document.getElementById('maxila');
+  const mandSlider = document.getElementById('mandibula');
+  const genSlider = document.getElementById('genio');
+  const predImg = document.getElementById('predicted-photo');
+
+  function update() {
+    const max = parseFloat(maxSlider.value);
+    const mand = parseFloat(mandSlider.value);
+    const gen = parseFloat(genSlider.value);
+
+    // Atualiza valores exibidos
+    document.getElementById('max-val').textContent = max;
+    document.getElementById('mand-val').textContent = mand;
+    document.getElementById('gen-val').textContent = gen;
+    document.getElementById('max-result').textContent = max + ' mm';
+    document.getElementById('mand-result').textContent = mand + ' mm';
+    document.getElementById('gen-result').textContent = gen + ' mm';
+
+    // Simulação de morphing (movimento + leve escala)
+    const tx = max * 6 + mand * -5 + gen * 8;
+    const ty = max * -1.5 + mand * 4 + gen * 2;
+    const scale = 1 + (Math.abs(max + mand + gen) * 0.008);
+
+    predImg.style.transform = `translate(${tx}px, \( {ty}px) scale( \){scale})`;
   }
 
-  maxilaSlider.addEventListener('input', updateSimulation);
-  mandibulaSlider.addEventListener('input', updateSimulation);
-  genioSlider.addEventListener('input', updateSimulation);
+  maxSlider.addEventListener('input', update);
+  mandSlider.addEventListener('input', update);
+  genSlider.addEventListener('input', update);
 
   // Inicializa
-  updateSimulation();
+  update();
 </script>
 
 </body>
