@@ -1,352 +1,2070 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Simulador Ortognático • Futurístico Demo</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BTX OrthoSuite • Prontuário + Docs + Planejamento + 3D (Single HTML)</title>
+
+  <!-- 3D -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
-    :root {
-      --neon-blue: #00f0ff;
-      --neon-purple: #d400ff;
-      --dark-bg: #0a0015;
-      --panel-bg: rgba(10, 0, 30, 0.7);
-      --glow: 0 0 15px rgba(0, 240, 255, 0.6), 0 0 30px rgba(212, 0, 255, 0.4);
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1a2e;
+      --card:#111f38;
+      --ink:#eaf1ff;
+      --muted:#a8b7d4;
+      --line:#223a66;
+      --accent:#2e8bff;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --shadow: 0 12px 30px rgba(0,0,0,.35);
+      --r:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
     }
 
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      background: linear-gradient(135deg, #0a0015, #15002a);
-      color: #e0f0ff;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background:
+        radial-gradient(1200px 650px at 15% 8%, rgba(46,139,255,.18), transparent 55%),
+        radial-gradient(900px 520px at 85% 20%, rgba(34,197,94,.12), transparent 55%),
+        var(--bg);
+      color:var(--ink);
     }
 
-    header {
-      background: rgba(10, 0, 30, 0.8);
-      backdrop-filter: blur(10px);
-      padding: 1.2rem;
-      text-align: center;
-      border-bottom: 1px solid rgba(0, 240, 255, 0.3);
-      box-shadow: var(--glow);
+    header{
+      padding:16px 18px 0;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .logo{
+      width:38px; height:38px; border-radius:12px;
+      background: linear-gradient(135deg, rgba(46,139,255,.9), rgba(46,139,255,.12));
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: var(--shadow);
+    }
+    .title{ line-height:1.15; }
+    .title b{ font-size:16px; letter-spacing:.2px; }
+    .title small{ display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+
+    .top-actions{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
     }
 
-    h1 {
-      font-size: 2.4rem;
-      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+    button{
+      border:1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      color:var(--ink);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      box-shadow: 0 10px 18px rgba(0,0,0,.25);
+      transition: transform .08s ease, border-color .15s ease, opacity .15s ease;
+      font-weight:700;
+    }
+    button:hover{ transform: translateY(-1px); border-color: rgba(46,139,255,.55); }
+    button:disabled{ opacity:.5; cursor:not-allowed; transform:none; }
+    button.primary{
+      background: linear-gradient(180deg, rgba(46,139,255,.95), rgba(46,139,255,.55));
+      border-color: rgba(46,139,255,.85);
+    }
+    button.danger{
+      background: linear-gradient(180deg, rgba(239,68,68,.95), rgba(239,68,68,.45));
+      border-color: rgba(239,68,68,.75);
+    }
+    button.ghost{ background: transparent; box-shadow:none; }
+
+    main{
+      padding:18px;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:14px;
+    }
+    @media (max-width: 1050px){
+      main{ grid-template-columns: 1fr; }
     }
 
-    .tabs {
-      display: flex;
-      justify-content: center;
-      background: rgba(5, 0, 20, 0.6);
-      backdrop-filter: blur(8px);
-      padding: 0.8rem;
-      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .hd{
+      padding:14px 14px 10px;
+      display:flex; align-items:center; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(15,26,46,.55);
+      gap:10px;
+    }
+    .hd b{
+      font-size:13px; letter-spacing:.25px; text-transform:uppercase;
+    }
+    .bd{ padding:14px; }
+
+    .chip{
+      background: rgba(8,14,28,.55);
+      border:1px solid rgba(255,255,255,.12);
+      color:var(--muted);
+      border-radius:999px;
+      padding:7px 10px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .chip strong{ color:var(--ink); font-family:var(--mono); font-weight:800; }
+
+    .search{
+      display:flex; gap:8px; align-items:center;
+    }
+    input[type="text"], input[type="number"], select, textarea, input[type="date"]{
+      width:100%;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,14,28,.55);
+      color:var(--ink);
+      outline:none;
+    }
+    textarea{ min-height:88px; resize:vertical; }
+
+    .hr{ height:1px; background: rgba(255,255,255,.08); margin:12px 0; }
+
+    .list{
+      display:grid; gap:10px;
+    }
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(8,14,28,.42);
+      border-radius:14px;
+      padding:10px;
+      cursor:pointer;
+      transition: border-color .15s ease, transform .08s ease;
+    }
+    .card:hover{ border-color: rgba(46,139,255,.55); transform: translateY(-1px); }
+    .card.active{ border-color: rgba(46,139,255,.9); box-shadow: 0 10px 18px rgba(0,0,0,.25); }
+    .card b{ display:block; font-size:13px; }
+    .card small{ display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+
+    .tabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+    }
+    .tab{
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,14,28,.45);
+      color: var(--muted);
+      cursor:pointer;
+      font-weight:700;
+      font-size:12px;
+      transition: border-color .15s ease, color .15s ease, transform .08s ease;
+    }
+    .tab:hover{ transform: translateY(-1px); border-color: rgba(46,139,255,.55); }
+    .tab.active{
+      border-color: rgba(46,139,255,.9);
+      color: var(--ink);
+      background: rgba(46,139,255,.18);
     }
 
-    .tab-button {
-      padding: 0.9rem 2rem;
-      margin: 0 0.5rem;
-      background: transparent;
-      border: 1px solid rgba(0, 240, 255, 0.4);
-      border-radius: 30px;
-      color: var(--neon-blue);
-      cursor: pointer;
-      transition: all 0.4s;
-      font-weight: bold;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .grid3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+    @media (max-width: 1050px){
+      .grid3{ grid-template-columns: 1fr; }
+    }
+    label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
     }
 
-    .tab-button:hover {
-      background: rgba(0, 240, 255, 0.1);
-      box-shadow: var(--glow);
-      transform: translateY(-3px);
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+    .slider{
+      display:grid;
+      grid-template-columns: 1fr 78px;
+      gap:10px;
+      align-items:center;
+    }
+    input[type="range"]{ width:100%; }
+    .mm{
+      font-family:var(--mono);
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,14,28,.55);
+      text-align:center;
     }
 
-    .tab-button.active {
-      background: linear-gradient(45deg, rgba(0, 240, 255, 0.3), rgba(212, 0, 255, 0.3));
-      border-color: var(--neon-purple);
-      color: white;
-      box-shadow: var(--glow);
+    .alerts{ display:grid; gap:8px; }
+    .alert{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(8,14,28,.45);
+      font-size:12px;
+      color:var(--muted);
+    }
+    .alert.ok{ border-color: rgba(34,197,94,.35); }
+    .alert.warn{ border-color: rgba(245,158,11,.45); }
+    .alert.bad{ border-color: rgba(239,68,68,.55); }
+    .alert b{ color:var(--ink); }
+
+    .viewerWrap{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:14px;
+    }
+    @media (max-width: 1050px){
+      .viewerWrap{ grid-template-columns: 1fr; }
     }
 
-    .tab-content {
-      display: none;
-      padding: 2rem;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-
-    .tab-content.active { display: block; }
-
-    .panel {
-      background: var(--panel-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(0, 240, 255, 0.3);
-      border-radius: 16px;
-      padding: 2rem;
-      box-shadow: var(--glow);
-      margin-bottom: 2rem;
-    }
-
-    .image-container {
-      position: relative;
+    #viewer3d{
       height: 520px;
-      background: rgba(0,0,0,0.6);
-      border: 2px dashed rgba(0, 240, 255, 0.5);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.4s;
+      width:100%;
+      border-radius: var(--r);
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      background:
+        radial-gradient(900px 500px at 30% 20%, rgba(46,139,255,.12), transparent 58%),
+        radial-gradient(900px 500px at 80% 70%, rgba(34,197,94,.10), transparent 60%),
+        rgba(6,10,20,.65);
     }
 
-    .image-container:hover {
-      border-color: var(--neon-purple);
-      box-shadow: 0 0 30px rgba(212, 0, 255, 0.4);
+    .box{
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: var(--r);
+      background: rgba(6,10,20,.55);
+      padding:12px;
+      box-shadow: var(--shadow);
+    }
+    .box b{
+      display:block; font-size:13px; letter-spacing:.2px; text-transform:uppercase;
+      margin-bottom:8px;
     }
 
-    img, canvas {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      transition: transform 0.6s ease;
+    canvas.profile{
+      width:100%;
+      height:255px;
+      display:block;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(8,14,28,.55);
     }
 
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin: 2rem 0;
+    .legend{
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;
+      color:var(--muted); font-size:12px;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px; display:inline-block;
+      margin-right:6px; background: rgba(255,255,255,.4);
+      border:1px solid rgba(255,255,255,.2);
+    }
+    .dot.before{ background: rgba(255,255,255,.18); }
+    .dot.after{ background: rgba(46,139,255,.8); border-color: rgba(46,139,255,.95); }
+
+    .mini{ font-size:12px; color:var(--muted); line-height:1.45; }
+
+    /* Docs */
+    .docgrid{ display:grid; gap:10px; }
+    .docItem{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:center;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(8,14,28,.42);
+      border-radius:14px;
+      padding:10px;
+    }
+    .docItem b{ font-size:13px; display:block; }
+    .docItem small{ font-size:12px; color:var(--muted); display:block; margin-top:2px; }
+    .docActions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+    /* Modal */
+    .modalBack{
+      position:fixed; inset:0; background: rgba(0,0,0,.55);
+      display:none; align-items:center; justify-content:center; padding:14px;
+      z-index:999;
+    }
+    .modal{
+      width:min(980px, 100%);
+      background: rgba(10,16,32,.96);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .modal .mhd{
+      padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .modal .mbd{ padding:14px; }
+    .modal .mhd b{ text-transform:uppercase; font-size:13px; letter-spacing:.25px; }
+    .modal img{
+      max-width:100%;
+      height:auto;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(8,14,28,.55);
+    }
+    .modal iframe{
+      width:100%;
+      height:70vh;
+      border:0;
+      border-radius:14px;
+      background:#fff;
     }
 
-    label {
-      color: var(--neon-blue);
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-      display: block;
+    /* Hidden report for PDF capture */
+    #reportArea{
+      display:none;
+      background:#ffffff;
+      color:#111827;
+      padding:18px;
+      width:980px;
+      max-width:100%;
+      border-radius: 16px;
     }
-
-    input[type="range"] {
-      width: 100%;
-      height: 8px;
-      background: linear-gradient(to right, var(--neon-blue), var(--neon-purple));
-      border-radius: 5px;
-      appearance: none;
-      outline: none;
+    #reportArea h1{ margin:0 0 8px; font-size:18px; }
+    #reportArea h2{ margin:12px 0 6px; font-size:13px; text-transform:uppercase; letter-spacing:.3px; }
+    #reportArea .meta{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      font-size:12px;
+      margin-bottom:10px;
     }
-
-    input[type="range"]::-webkit-slider-thumb {
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      box-shadow: 0 0 15px var(--neon-blue);
-      cursor: pointer;
+    #reportArea .rbox{
+      border:1px solid #e5e7eb;
+      padding:10px;
+      border-radius:12px;
     }
-
-    .value {
-      color: var(--neon-purple);
-      font-weight: bold;
-      margin-left: 10px;
-    }
-
-    .btn-neon {
-      padding: 0.9rem 2rem;
-      background: transparent;
-      border: 2px solid var(--neon-blue);
-      color: var(--neon-blue);
-      border-radius: 50px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.4s;
-      margin: 0.5rem;
-    }
-
-    .btn-neon:hover {
-      background: var(--neon-blue);
-      color: black;
-      box-shadow: var(--glow);
-      transform: scale(1.05);
-    }
-
-    .info {
-      background: rgba(0, 240, 255, 0.08);
-      border: 1px solid rgba(0, 240, 255, 0.3);
-      border-radius: 12px;
-      padding: 1rem;
-      margin-top: 1.5rem;
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
+    #reportArea .muted{ color:#6b7280; font-size:11px; }
+    #reportArea ul{ margin:6px 0 0 18px; }
   </style>
 </head>
-<body>
 
+<body>
 <header>
-  <h1>Simulador Ortognático • Neo Horizon</h1>
-  <p>Planejamento Cirúrgico • Morphing Holográfico • Demo Futurística</p>
+  <div class="brand">
+    <div class="logo"></div>
+    <div class="title">
+      <b>BTX OrthoSuite • Single HTML</b>
+      <small>Prontuário + Documentação + Planejamento cirúrgico + Simulação 3D fictícia + PDF + Backup (offline)</small>
+    </div>
+  </div>
+
+  <div class="top-actions">
+    <span class="chip">Banco: <strong id="dbStatus">iniciando…</strong></span>
+    <button class="ghost" id="btnNew">Novo caso</button>
+    <button class="ghost" id="btnBackup">Exportar backup</button>
+    <label class="chip" style="cursor:pointer;">
+      <input id="inpRestore" type="file" accept="application/json" style="display:none;">
+      <strong>Importar backup</strong>
+    </label>
+    <button class="primary" id="btnPDF">PDF do caso</button>
+  </div>
 </header>
 
-<div class="tabs">
-  <button class="tab-button active" onclick="showTab('upload')">UPLOAD</button>
-  <button class="tab-button" onclick="showTab('planejamento')">PLANEJAMENTO</button>
-  <button class="tab-button" onclick="showTab('simulacao')">SIMULAÇÃO</button>
-</div>
-
-<div id="upload" class="tab-content active">
-  <div class="panel">
-    <h2>Carregar Perfil do Paciente</h2>
-    <div class="image-container" id="upload-area">
-      <img id="original-photo" src="https://via.placeholder.com/600x800/0a0015/00f0ff?text=ARRASTE+OU+CLIQUE+AQUI" alt="Foto lateral">
+<main>
+  <!-- LEFT: cases -->
+  <section class="panel">
+    <div class="hd">
+      <b>Casos</b>
+      <span class="chip">Total: <strong id="caseCount">0</strong></span>
     </div>
-    <input type="file" id="photo-input" accept="image/*" style="display:none;">
-    <div style="text-align:center; margin-top:1.5rem;">
-      <button class="btn-neon" onclick="document.getElementById('photo-input').click()">SELECIONAR FOTO</button>
-    </div>
-  </div>
-</div>
-
-<div id="planejamento" class="tab-content">
-  <div class="panel">
-    <h2>Controles de Simulação</h2>
-    <div class="controls">
-      <div>
-        <label>Avanço Maxila (mm) <span class="value" id="max-val">0</span></label>
-        <input type="range" min="-15" max="15" value="0" step="0.5" id="maxila">
+    <div class="bd">
+      <div class="search" style="margin-bottom:10px;">
+        <input id="q" type="text" placeholder="Buscar por nome, ID, classe..." />
+        <button id="btnClear" class="ghost">Limpar</button>
       </div>
-      <div>
-        <label>Avanço Mandíbula (mm) <span class="value" id="mand-val">0</span></label>
-        <input type="range" min="-15" max="15" value="0" step="0.5" id="mandibula">
-      </div>
-      <div>
-        <label>Genioplastia (mm) <span class="value" id="gen-val">0</span></label>
-        <input type="range" min="-12" max="12" value="0" step="0.5" id="genio">
-      </div>
-    </div>
-    <div style="text-align:center; margin-top:2rem;">
-      <button class="btn-neon" onclick="demoRapida()">DEMONSTRAÇÃO RÁPIDA</button>
-      <button class="btn-neon" onclick="resetAll()">RESET</button>
-    </div>
-  </div>
-</div>
 
-<div id="simulacao" class="tab-content">
-  <div class="panel">
-    <h2>Visualização Holográfica</h2>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px,1fr)); gap:2rem;">
-      <div>
-        <h3>Antes</h3>
-        <div class="image-container">
-          <img id="before-preview" src="https://via.placeholder.com/500x700/0a0015/00f0ff?text=Antes">
+      <div class="row" style="margin-bottom:10px;">
+        <button id="btnRandom" class="ghost">Caso exemplo</button>
+        <button id="btnDelete" class="danger" disabled>Apagar</button>
+      </div>
+
+      <div class="list" id="caseList"></div>
+
+      <p class="mini" style="margin-top:12px;">
+        Dica: isso roda offline e guarda tudo no navegador (IndexedDB). Use o <b>backup</b> pra copiar pro notebook/pendrive.
+      </p>
+    </div>
+  </section>
+
+  <!-- RIGHT: workspace -->
+  <section class="panel">
+    <div class="hd">
+      <b id="caseTitle">Nenhum caso selecionado</b>
+      <div class="tabs" id="tabs">
+        <div class="tab active" data-tab="prontuario">Prontuário</div>
+        <div class="tab" data-tab="timeline">Timeline</div>
+        <div class="tab" data-tab="docs">Docs</div>
+        <div class="tab" data-tab="planejamento">Planejamento</div>
+        <div class="tab" data-tab="simulacao">Simulação</div>
+      </div>
+    </div>
+
+    <div class="bd">
+      <!-- PRONTUÁRIO -->
+      <section id="tab-prontuario">
+        <div class="grid3">
+          <div>
+            <label>Nome</label>
+            <input id="pName" type="text" placeholder="Ex.: João da Silva" />
+          </div>
+          <div>
+            <label>ID/Prontuário</label>
+            <input id="pId" type="text" placeholder="Ex.: 000123" />
+          </div>
+          <div>
+            <label>Idade</label>
+            <input id="pAge" type="number" min="0" max="120" placeholder="Ex.: 24" />
+          </div>
         </div>
-      </div>
-      <div>
-        <h3>Depois (Simulado)</h3>
-        <div class="image-container">
-          <canvas id="after-canvas"></canvas>
+
+        <div class="grid3" style="margin-top:10px;">
+          <div>
+            <label>Sexo</label>
+            <select id="pSex">
+              <option value="Não informado">Não informado</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Masculino">Masculino</option>
+            </select>
+          </div>
+          <div>
+            <label>Classe esquelética</label>
+            <select id="dxClass">
+              <option value="Não definido">Não definido</option>
+              <option value="Classe I">Classe I</option>
+              <option value="Classe II">Classe II</option>
+              <option value="Classe III">Classe III</option>
+            </select>
+          </div>
+          <div>
+            <label>Padrão facial</label>
+            <select id="dxPattern">
+              <option value="Não definido">Não definido</option>
+              <option value="Dolicofacial">Dolicofacial</option>
+              <option value="Mesofacial">Mesofacial</option>
+              <option value="Braquifacial">Braquifacial</option>
+            </select>
+          </div>
         </div>
+
+        <div class="grid2" style="margin-top:10px;">
+          <div>
+            <label>Queixa principal</label>
+            <textarea id="pComplaint" placeholder="Ex.: queixo pra trás, mordida profunda, assimetria..."></textarea>
+          </div>
+          <div>
+            <label>Expectativa do paciente</label>
+            <textarea id="pExpect" placeholder="Ex.: melhorar perfil e função mastigatória..."></textarea>
+          </div>
+        </div>
+
+        <div class="grid2" style="margin-top:10px;">
+          <div>
+            <label>Histórico ortodôntico</label>
+            <textarea id="pOrthoHx" placeholder="Ex.: início do aparelho, extrações, intercorrências..."></textarea>
+          </div>
+          <div>
+            <label>Anotações clínicas</label>
+            <textarea id="pNotes" placeholder="ATM, via aérea, periodontal, hábitos, ronco..."></textarea>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="grid3">
+          <div>
+            <label>Assimetria</label>
+            <select id="dxAsym">
+              <option value="Não definido">Não definido</option>
+              <option value="Não">Não</option>
+              <option value="Leve">Leve</option>
+              <option value="Moderada">Moderada</option>
+              <option value="Importante">Importante</option>
+            </select>
+          </div>
+          <div>
+            <label>Sorriso gengival</label>
+            <select id="dxGing">
+              <option value="Não definido">Não definido</option>
+              <option value="Não">Não</option>
+              <option value="Leve">Leve</option>
+              <option value="Moderado">Moderado</option>
+              <option value="Importante">Importante</option>
+            </select>
+          </div>
+          <div>
+            <label>Selamento labial</label>
+            <select id="dxLipSeal">
+              <option value="Não definido">Não definido</option>
+              <option value="OK">OK</option>
+              <option value="Difícil">Difícil</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid2" style="margin-top:10px;">
+          <div>
+            <label>Riscos/observações (prós e contras)</label>
+            <textarea id="pProsCons" placeholder="Ex.: risco parestesia, edema, alteração nasal, recidiva, necessidade de refinamentos..."></textarea>
+          </div>
+          <div>
+            <label>Decisão compartilhada / consentimento (resumo)</label>
+            <textarea id="pConsent" placeholder="Ex.: paciente compreendeu limitações, aceitou plano X, ciente de variações..."></textarea>
+          </div>
+        </div>
+
+        <p class="mini" style="margin-top:10px;">
+          Tudo aqui salva automaticamente no caso selecionado.
+        </p>
+      </section>
+
+      <!-- TIMELINE -->
+      <section id="tab-timeline" style="display:none;">
+        <div class="row" style="justify-content:space-between; align-items:flex-end;">
+          <div style="flex:1; min-width:240px;">
+            <label>Data</label>
+            <input id="tlDate" type="date" />
+          </div>
+          <div style="flex:2; min-width:260px;">
+            <label>Nota da manutenção</label>
+            <input id="tlNote" type="text" placeholder="Ex.: troca de fios, elásticos, preparo cirúrgico..." />
+          </div>
+          <div>
+            <button id="btnAddTL" class="primary">Adicionar</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div id="tlList" class="list"></div>
+
+        <p class="mini" style="margin-top:10px;">
+          Timeline ajuda demais pra planejamento: você sabe exatamente em que fase o paciente estava quando decidiu o plano cirúrgico.
+        </p>
+      </section>
+
+      <!-- DOCS -->
+      <section id="tab-docs" style="display:none;">
+        <div class="grid2">
+          <div>
+            <label>Tipo de documento</label>
+            <select id="docType">
+              <option value="Foto facial">Foto facial</option>
+              <option value="Foto sorriso">Foto sorriso</option>
+              <option value="Oclusal">Oclusal</option>
+              <option value="Telerradiografia">Telerradiografia</option>
+              <option value="Panorâmica">Panorâmica</option>
+              <option value="CBCT (PDF)">CBCT (PDF)</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div>
+            <label>Selecionar arquivo (imagem/PDF)</label>
+            <input id="docFile" type="file" accept="image/*,application/pdf" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px; justify-content:space-between;">
+          <div style="flex:1; min-width:240px;">
+            <label>Título / observação</label>
+            <input id="docTitle" type="text" placeholder="Ex.: Perfil direito pré-op" />
+          </div>
+          <div>
+            <button id="btnAddDoc" class="primary">Salvar documento</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="docgrid" id="docList"></div>
+
+        <p class="mini" style="margin-top:10px;">
+          Os arquivos ficam no seu navegador (offline). Use backup pra levar pro notebook.
+        </p>
+      </section>
+
+      <!-- PLANEJAMENTO -->
+      <section id="tab-planejamento" style="display:none;">
+        <div class="chip" style="margin-bottom:10px;">
+          Unidade: <strong>mm</strong> e <strong>graus</strong> • com limites médios + alertas
+        </div>
+
+        <div class="grid3">
+          <div class="box">
+            <b>Maxila • Le Fort I</b>
+
+            <label>Avanço/Recuo (−10 a +10)</label>
+            <div class="slider">
+              <input id="mxAdv" type="range" min="-10" max="10" step="0.5" value="0" />
+              <div class="mm" id="mxAdvVal">0.0</div>
+            </div>
+
+            <label style="margin-top:10px;">Impactação/Subida (0 a +6)</label>
+            <div class="slider">
+              <input id="mxImp" type="range" min="0" max="6" step="0.5" value="0" />
+              <div class="mm" id="mxImpVal">0.0</div>
+            </div>
+
+            <label style="margin-top:10px;">Rotação do plano oclusal (−8° a +8°)</label>
+            <div class="slider">
+              <input id="mxRot" type="range" min="-8" max="8" step="0.5" value="0" />
+              <div class="mm" id="mxRotVal">0.0°</div>
+            </div>
+          </div>
+
+          <div class="box">
+            <b>Mandíbula • BSSO</b>
+
+            <label>Avanço/Recuo (−8 a +12)</label>
+            <div class="slider">
+              <input id="mdAdv" type="range" min="-8" max="12" step="0.5" value="0" />
+              <div class="mm" id="mdAdvVal">0.0</div>
+            </div>
+
+            <label style="margin-top:10px;">Rotação mandibular (−6° a +6°)</label>
+            <div class="slider">
+              <input id="mdRot" type="range" min="-6" max="6" step="0.5" value="0" />
+              <div class="mm" id="mdRotVal">0.0°</div>
+            </div>
+
+            <label style="margin-top:10px;">Lateralização (assimetria) (−4 a +4)</label>
+            <div class="slider">
+              <input id="mdLat" type="range" min="-4" max="4" step="0.5" value="0" />
+              <div class="mm" id="mdLatVal">0.0</div>
+            </div>
+          </div>
+
+          <div class="box">
+            <b>Mento • Genioplastia</b>
+
+            <label>Avanço/Recuo (−6 a +10)</label>
+            <div class="slider">
+              <input id="chAdv" type="range" min="-6" max="10" step="0.5" value="0" />
+              <div class="mm" id="chAdvVal">0.0</div>
+            </div>
+
+            <label style="margin-top:10px;">Altura (−4 a +4)</label>
+            <div class="slider">
+              <input id="chVert" type="range" min="-4" max="4" step="0.5" value="0" />
+              <div class="mm" id="chVertVal">0.0</div>
+            </div>
+
+            <label style="margin-top:10px;">Lateralização (−3 a +3)</label>
+            <div class="slider">
+              <input id="chLat" type="range" min="-3" max="3" step="0.5" value="0" />
+              <div class="mm" id="chLatVal">0.0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="grid2">
+          <div class="box">
+            <b>Tecido mole (tendência)</b>
+            <label>Resposta do lábio (0.60 a 0.90)</label>
+            <div class="slider">
+              <input id="lipResp" type="range" min="0.6" max="0.9" step="0.01" value="0.78" />
+              <div class="mm" id="lipRespVal">0.78</div>
+            </div>
+
+            <label style="margin-top:10px;">Resposta do nariz (0.20 a 0.60)</label>
+            <div class="slider">
+              <input id="noseResp" type="range" min="0.2" max="0.6" step="0.01" value="0.35" />
+              <div class="mm" id="noseRespVal">0.35</div>
+            </div>
+
+            <label style="margin-top:10px;">Resposta do mento (0.60 a 1.00)</label>
+            <div class="slider">
+              <input id="chinResp" type="range" min="0.6" max="1.0" step="0.01" value="0.85" />
+              <div class="mm" id="chinRespVal">0.85</div>
+            </div>
+          </div>
+
+          <div class="box">
+            <b>Alertas clínicos</b>
+            <div class="alerts" id="alerts"></div>
+            <p class="mini" style="margin-top:10px;">
+              O sistema te avisa quando o plano está fora do comum, pra você registrar “por quê” e discutir com o paciente.
+            </p>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="grid2">
+          <div>
+            <label>Justificativa / racional do plano</label>
+            <textarea id="planRationale" placeholder="Por que esses movimentos? O que pretende corrigir (função/estética/via aérea)?"></textarea>
+          </div>
+          <div>
+            <label>Checklist pré-op (curto)</label>
+            <textarea id="planChecklist" placeholder="Ex.: finalização ortodôntica, avaliação ATM, exames, anestesia, fotos, consentimento..."></textarea>
+          </div>
+        </div>
+
+        <p class="mini" style="margin-top:10px;">
+          ⚠️ Simulação fictícia e tendências de tecido mole não substituem VSP com CBCT + oclusão real.
+        </p>
+      </section>
+
+      <!-- SIMULAÇÃO -->
+      <section id="tab-simulacao" style="display:none;">
+        <div class="viewerWrap">
+          <div class="panel" style="border-radius: var(--r);">
+            <div class="hd">
+              <b>Visualização 3D • paciente fictício</b>
+              <div class="row">
+                <button id="btnToggle3D" class="ghost">Antes/Depois</button>
+                <span class="chip">Modo: <strong id="modeLabel">Depois</strong></span>
+              </div>
+            </div>
+            <div class="bd">
+              <div id="viewer3d"></div>
+              <p class="mini" style="margin-top:10px;">
+                Dica de produto: quando você tiver um <b>modelo GLB</b> realista, dá pra trocar o “manequim” por um rosto top sem mudar a lógica do software.
+              </p>
+            </div>
+          </div>
+
+          <div class="box">
+            <b>Perfil (Antes × Depois)</b>
+            <canvas class="profile" id="profileCanvas" width="900" height="520"></canvas>
+            <div class="legend">
+              <span><span class="dot before"></span>Antes</span>
+              <span><span class="dot after"></span>Depois</span>
+              <span class="chip">Lábio <strong id="lgLip">0.78</strong></span>
+              <span class="chip">Nariz <strong id="lgNose">0.35</strong></span>
+              <span class="chip">Mento <strong id="lgChin">0.85</strong></span>
+            </div>
+            <p class="mini" style="margin-top:10px;">
+              Isso é “clínico”: não é milagre, é tendência — e te ajuda a conversar com o paciente com honestidade.
+            </p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </section>
+</main>
+
+<!-- Modal preview -->
+<div class="modalBack" id="modalBack">
+  <div class="modal">
+    <div class="mhd">
+      <b id="modalTitle">Documento</b>
+      <div class="row">
+        <button id="btnDownloadDoc" class="ghost">Baixar</button>
+        <button id="btnCloseModal" class="danger">Fechar</button>
       </div>
     </div>
-    <div style="text-align:center; margin-top:2rem;">
-      <button class="btn-neon" onclick="exportarImagem()">DOWNLOAD RESULTADO</button>
-    </div>
+    <div class="mbd" id="modalBody"></div>
   </div>
 </div>
+
+<!-- Hidden report for PDF -->
+<section id="reportArea">
+  <h1>Relatório • Planejamento Ortognático</h1>
+  <div class="meta">
+    <div class="rbox">
+      <b>Paciente</b><br/>
+      <span id="rPatient"></span><br/>
+      <span class="muted" id="rMeta"></span>
+    </div>
+    <div class="rbox">
+      <b>Diagnóstico</b><br/>
+      <span id="rDx"></span><br/>
+      <span class="muted" id="rDx2"></span>
+    </div>
+  </div>
+
+  <div class="rbox">
+    <b>Queixa</b><br/>
+    <div id="rComplaint"></div>
+  </div>
+
+  <div class="rbox" style="margin-top:10px;">
+    <b>Expectativa</b><br/>
+    <div id="rExpect"></div>
+  </div>
+
+  <h2>Planejamento</h2>
+  <div class="rbox">
+    <ul>
+      <li>Maxila: avanço/recuo = <b id="rMxAdv"></b> mm | impactação = <b id="rMxImp"></b> mm | rotação = <b id="rMxRot"></b> °</li>
+      <li>Mandíbula: avanço/recuo = <b id="rMdAdv"></b> mm | rotação = <b id="rMdRot"></b> ° | lateralização = <b id="rMdLat"></b> mm</li>
+      <li>Mento: avanço/recuo = <b id="rChAdv"></b> mm | altura = <b id="rChVert"></b> mm | lateralização = <b id="rChLat"></b> mm</li>
+    </ul>
+    <div class="muted">Coeficientes (tendência): lábio = <b id="rLip"></b> | nariz = <b id="rNose"></b> | mento = <b id="rChinResp"></b></div>
+  </div>
+
+  <h2>Alertas e observações</h2>
+  <div class="rbox">
+    <div id="rAlerts"></div>
+  </div>
+
+  <h2>Racional do plano</h2>
+  <div class="rbox"><div id="rRationale"></div></div>
+
+  <h2>Checklist pré-op</h2>
+  <div class="rbox"><div id="rChecklist"></div></div>
+
+  <h2>Notas clínicas</h2>
+  <div class="rbox"><div id="rNotes"></div></div>
+
+  <p class="muted" style="margin-top:10px;">
+    Aviso: simulação fictícia/tendência. Planejamento fidedigno exige CBCT (DICOM), segmentação e oclusão com escaneamento intraoral.
+  </p>
+</section>
 
 <script>
-function showTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  document.querySelector(`button[onclick="showTab('${tabId}')"]`).classList.add('active');
+/* ============================
+   Utilities
+============================ */
+const $ = (id)=>document.getElementById(id);
+const nowISO = ()=> new Date().toISOString();
+const todayDate = ()=> new Date().toISOString().slice(0,10);
+
+function uid(){
+  return Math.random().toString(16).slice(2) + "-" + Date.now().toString(16);
+}
+function fmt1(n){ return (Math.round(Number(n)*10)/10).toFixed(1); }
+function fmt2(n){ return Number(n).toFixed(2); }
+
+/* ============================
+   IndexedDB wrapper
+============================ */
+const DB_NAME = "btx_orthosuite_db";
+const DB_VER  = 1;
+let db = null;
+
+function openDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = (e)=>{
+      const d = req.result;
+      if(!d.objectStoreNames.contains("cases")){
+        const s = d.createObjectStore("cases", { keyPath:"id" });
+        s.createIndex("updatedAt", "updatedAt");
+      }
+      if(!d.objectStoreNames.contains("docs")){
+        const s = d.createObjectStore("docs", { keyPath:"id" });
+        s.createIndex("caseId", "caseId");
+        s.createIndex("createdAt", "createdAt");
+      }
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
 }
 
-let originalImage = null;
-const canvas = document.getElementById('after-canvas');
-const ctx = canvas.getContext('2d');
+function tx(store, mode="readonly"){
+  return db.transaction(store, mode).objectStore(store);
+}
 
-function loadImage(file) {
-  const url = URL.createObjectURL(file);
-  document.getElementById('original-photo').src = url;
-  document.getElementById('before-preview').src = url;
+function idbGetAll(store){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store).getAll();
+    req.onsuccess = ()=> resolve(req.result || []);
+    req.onerror = ()=> reject(req.error);
+  });
+}
 
-  originalImage = new Image();
-  originalImage.src = url;
-  originalImage.onload = () => {
-    canvas.width = originalImage.width;
-    canvas.height = originalImage.height;
-    updateSimulation();
+function idbPut(store, value){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store, "readwrite").put(value);
+    req.onsuccess = ()=> resolve(true);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+function idbDelete(store, key){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store, "readwrite").delete(key);
+    req.onsuccess = ()=> resolve(true);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+function idbGet(store, key){
+  return new Promise((resolve, reject)=>{
+    const req = tx(store).get(key);
+    req.onsuccess = ()=> resolve(req.result || null);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+async function idbGetDocsByCase(caseId){
+  return new Promise((resolve, reject)=>{
+    const store = tx("docs");
+    const idx = store.index("caseId");
+    const req = idx.getAll(caseId);
+    req.onsuccess = ()=> resolve(req.result || []);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+/* ============================
+   App state
+============================ */
+let allCases = [];
+let selectedId = null;
+let activeTab = "prontuario";
+let showAfter3D = true;
+
+// Planning state bound to UI
+const plan = {
+  mxAdv:0, mxImp:0, mxRot:0,
+  mdAdv:0, mdRot:0, mdLat:0,
+  chAdv:0, chVert:0, chLat:0,
+  lipResp:0.78, noseResp:0.35, chinResp:0.85
+};
+
+// Limits for alerts (médias plausíveis)
+const lim = {
+  mxAdv_ok:[-6, 6],  mxAdv_h:[-10,10],
+  mxImp_ok:[ 0, 5],  mxImp_h:[ 0, 6],
+  mxRot_ok:[-4, 4],  mxRot_h:[-8, 8],
+
+  mdAdv_ok:[-5, 8],  mdAdv_h:[-8,12],
+  mdRot_ok:[-3, 3],  mdRot_h:[-6, 6],
+  mdLat_ok:[-2, 2],  mdLat_h:[-4, 4],
+
+  chAdv_ok:[-4, 8],  chAdv_h:[-6,10],
+  chV_ok:  [-3, 3],  chV_h:  [-4, 4],
+  chLat_ok:[-1.5,1.5], chLat_h:[-3,3],
+};
+
+function severity(v, ok, hard){
+  if(v>=ok[0] && v<=ok[1]) return "ok";
+  if(v>=hard[0] && v<=hard[1]) return "warn";
+  return "bad";
+}
+
+/* ============================
+   Case model
+============================ */
+function newCaseTemplate(){
+  return {
+    id: uid(),
+    createdAt: nowISO(),
+    updatedAt: nowISO(),
+    patient: {
+      name:"",
+      pid:"",
+      age:"",
+      sex:"Não informado",
+      dxClass:"Não definido",
+      dxPattern:"Não definido",
+      dxAsym:"Não definido",
+      dxGing:"Não definido",
+      dxLipSeal:"Não definido",
+      complaint:"",
+      expect:"",
+      orthoHx:"",
+      notes:"",
+      prosCons:"",
+      consent:""
+    },
+    timeline: [],
+    planning: {
+      ...plan,
+      planRationale:"",
+      planChecklist:""
+    }
   };
 }
 
-document.getElementById('photo-input').addEventListener('change', e => {
-  if (e.target.files[0]) loadImage(e.target.files[0]);
+/* ============================
+   Rendering: case list
+============================ */
+function caseLabel(c){
+  const p = c.patient || {};
+  const name = (p.name || "Sem nome").trim();
+  const pid  = (p.pid || "—").trim();
+  const cls  = p.dxClass || "—";
+  return { name, pid, cls };
+}
+
+function renderCaseList(){
+  const q = ($("q").value || "").toLowerCase().trim();
+  const wrap = $("caseList");
+  wrap.innerHTML = "";
+
+  let filtered = allCases.slice().sort((a,b)=> (b.updatedAt||"").localeCompare(a.updatedAt||""));
+  if(q){
+    filtered = filtered.filter(c=>{
+      const p = c.patient || {};
+      const hay = [
+        p.name, p.pid, p.dxClass, p.dxPattern, p.complaint, p.expect
+      ].join(" ").toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  $("caseCount").textContent = String(filtered.length);
+
+  filtered.forEach(c=>{
+    const {name, pid, cls} = caseLabel(c);
+    const el = document.createElement("div");
+    el.className = "card" + (c.id===selectedId ? " active":"");
+    el.innerHTML = `<b>${escapeHTML(name)}</b><small>ID ${escapeHTML(pid)} • ${escapeHTML(cls)} • Atualizado: ${fmtTime(c.updatedAt)}</small>`;
+    el.onclick = ()=> selectCase(c.id);
+    wrap.appendChild(el);
+  });
+}
+
+function fmtTime(iso){
+  if(!iso) return "—";
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return "—";
+  return d.toLocaleString("pt-BR");
+}
+
+function escapeHTML(s){
+  return String(s||"").replace(/[&<>"']/g, (m)=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[m]));
+}
+
+/* ============================
+   Selecting + loading
+============================ */
+async function selectCase(id){
+  selectedId = id;
+  const c = allCases.find(x=>x.id===id);
+  $("btnDelete").disabled = !c;
+  if(!c){
+    $("caseTitle").textContent = "Nenhum caso selecionado";
+    return;
+  }
+  $("caseTitle").textContent = `Caso • ${caseLabel(c).name}`;
+  loadCaseToUI(c);
+  renderCaseList();
+  await renderDocs();
+  renderTimeline();
+  refreshAlerts();
+  refresh3DAndProfile();
+}
+
+function loadCaseToUI(c){
+  const p = c.patient || {};
+  $("pName").value = p.name || "";
+  $("pId").value = p.pid || "";
+  $("pAge").value = p.age || "";
+  $("pSex").value = p.sex || "Não informado";
+
+  $("dxClass").value = p.dxClass || "Não definido";
+  $("dxPattern").value = p.dxPattern || "Não definido";
+  $("dxAsym").value = p.dxAsym || "Não definido";
+  $("dxGing").value = p.dxGing || "Não definido";
+  $("dxLipSeal").value = p.dxLipSeal || "Não definido";
+
+  $("pComplaint").value = p.complaint || "";
+  $("pExpect").value = p.expect || "";
+  $("pOrthoHx").value = p.orthoHx || "";
+  $("pNotes").value = p.notes || "";
+  $("pProsCons").value = p.prosCons || "";
+  $("pConsent").value = p.consent || "";
+
+  // planning
+  const pl = c.planning || {};
+  for(const k in plan){
+    if(typeof pl[k] === "number") plan[k] = pl[k];
+  }
+  $("planRationale").value = pl.planRationale || "";
+  $("planChecklist").value = pl.planChecklist || "";
+
+  // push planning to sliders
+  setSlider("mxAdv", plan.mxAdv, true);
+  setSlider("mxImp", plan.mxImp, true);
+  setSlider("mxRot", plan.mxRot, true);
+
+  setSlider("mdAdv", plan.mdAdv, true);
+  setSlider("mdRot", plan.mdRot, true);
+  setSlider("mdLat", plan.mdLat, true);
+
+  setSlider("chAdv", plan.chAdv, true);
+  setSlider("chVert", plan.chVert, true);
+  setSlider("chLat", plan.chLat, true);
+
+  setSlider("lipResp", plan.lipResp, true);
+  setSlider("noseResp", plan.noseResp, true);
+  setSlider("chinResp", plan.chinResp, true);
+
+  // timeline date default
+  $("tlDate").value = todayDate();
+}
+
+function getSelectedCase(){
+  return allCases.find(x=>x.id===selectedId) || null;
+}
+
+async function persistSelectedFromUI(){
+  const c = getSelectedCase();
+  if(!c) return;
+
+  // patient
+  c.patient = {
+    name: $("pName").value || "",
+    pid: $("pId").value || "",
+    age: $("pAge").value || "",
+    sex: $("pSex").value || "Não informado",
+    dxClass: $("dxClass").value || "Não definido",
+    dxPattern: $("dxPattern").value || "Não definido",
+    dxAsym: $("dxAsym").value || "Não definido",
+    dxGing: $("dxGing").value || "Não definido",
+    dxLipSeal: $("dxLipSeal").value || "Não definido",
+    complaint: $("pComplaint").value || "",
+    expect: $("pExpect").value || "",
+    orthoHx: $("pOrthoHx").value || "",
+    notes: $("pNotes").value || "",
+    prosCons: $("pProsCons").value || "",
+    consent: $("pConsent").value || ""
+  };
+
+  c.planning = {
+    ...plan,
+    planRationale: $("planRationale").value || "",
+    planChecklist: $("planChecklist").value || ""
+  };
+
+  c.updatedAt = nowISO();
+
+  await idbPut("cases", c);
+  // update cache
+  const idx = allCases.findIndex(x=>x.id===c.id);
+  if(idx>=0) allCases[idx] = c;
+  renderCaseList();
+}
+
+/* ============================
+   Tabs
+============================ */
+function setTab(tab){
+  activeTab = tab;
+  document.querySelectorAll(".tab").forEach(t=>{
+    t.classList.toggle("active", t.dataset.tab===tab);
+  });
+  ["prontuario","timeline","docs","planejamento","simulacao"].forEach(k=>{
+    const el = $("tab-"+k);
+    el.style.display = (k===tab) ? "" : "none";
+  });
+  // refresh visuals when entering sim
+  if(tab==="simulacao"){
+    refresh3DAndProfile();
+  }
+}
+
+$("tabs").addEventListener("click", (e)=>{
+  const t = e.target.closest(".tab");
+  if(!t) return;
+  setTab(t.dataset.tab);
 });
 
-document.getElementById('upload-area').addEventListener('dragover', e => e.preventDefault());
-document.getElementById('upload-area').addEventListener('drop', e => {
-  e.preventDefault();
-  if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+/* ============================
+   Timeline
+============================ */
+function renderTimeline(){
+  const c = getSelectedCase();
+  const wrap = $("tlList");
+  wrap.innerHTML = "";
+  if(!c){ wrap.innerHTML = `<div class="mini">Selecione um caso.</div>`; return; }
+
+  const items = (c.timeline || []).slice().sort((a,b)=> (b.date||"").localeCompare(a.date||""));
+  if(items.length===0){
+    wrap.innerHTML = `<div class="mini">Sem entradas ainda. Adicione manutenções e fases ortodônticas aqui.</div>`;
+    return;
+  }
+
+  items.forEach(it=>{
+    const el = document.createElement("div");
+    el.className = "docItem";
+    el.innerHTML = `
+      <div>
+        <b>${escapeHTML(it.date || "—")}</b>
+        <small>${escapeHTML(it.note || "")}</small>
+      </div>
+      <div class="docActions">
+        <button class="ghost" data-act="edit">Editar</button>
+        <button class="danger" data-act="del">Remover</button>
+      </div>
+    `;
+    el.querySelector('[data-act="del"]').onclick = async ()=>{
+      c.timeline = (c.timeline||[]).filter(x=>x.id!==it.id);
+      await idbPut("cases", {...c, updatedAt: nowISO()});
+      allCases[allCases.findIndex(x=>x.id===c.id)] = c;
+      renderTimeline();
+      renderCaseList();
+    };
+    el.querySelector('[data-act="edit"]').onclick = async ()=>{
+      const nd = prompt("Data (YYYY-MM-DD):", it.date || "");
+      if(nd===null) return;
+      const nn = prompt("Nota:", it.note || "");
+      if(nn===null) return;
+      const x = (c.timeline||[]).find(x=>x.id===it.id);
+      if(x){ x.date = nd; x.note = nn; }
+      await idbPut("cases", {...c, updatedAt: nowISO()});
+      allCases[allCases.findIndex(x=>x.id===c.id)] = c;
+      renderTimeline();
+      renderCaseList();
+    };
+    wrap.appendChild(el);
+  });
+}
+
+$("btnAddTL").addEventListener("click", async ()=>{
+  const c = getSelectedCase();
+  if(!c) return alert("Selecione um caso primeiro.");
+  const date = $("tlDate").value || todayDate();
+  const note = ($("tlNote").value || "").trim();
+  if(!note) return alert("Escreva uma nota da manutenção.");
+
+  c.timeline = c.timeline || [];
+  c.timeline.push({ id: uid(), date, note, createdAt: nowISO() });
+  c.updatedAt = nowISO();
+  await idbPut("cases", c);
+  allCases[allCases.findIndex(x=>x.id===c.id)] = c;
+
+  $("tlNote").value = "";
+  renderTimeline();
+  renderCaseList();
 });
 
-function updateSimulation() {
-  if (!originalImage) return;
+/* ============================
+   Documents (files in IndexedDB)
+============================ */
+async function renderDocs(){
+  const c = getSelectedCase();
+  const wrap = $("docList");
+  wrap.innerHTML = "";
+  if(!c){ wrap.innerHTML = `<div class="mini">Selecione um caso.</div>`; return; }
 
-  const max = parseFloat(document.getElementById('maxila').value);
-  const mand = parseFloat(document.getElementById('mandibula').value);
-  const gen = parseFloat(document.getElementById('genio').value);
+  const docs = (await idbGetDocsByCase(c.id)).sort((a,b)=> (b.createdAt||"").localeCompare(a.createdAt||""));
+  if(docs.length===0){
+    wrap.innerHTML = `<div class="mini">Sem documentos ainda. Salve imagens/PDFs aqui (offline).</div>`;
+    return;
+  }
 
-  document.getElementById('max-val').textContent = max.toFixed(1);
-  document.getElementById('mand-val').textContent = mand.toFixed(1);
-  document.getElementById('gen-val').textContent = gen.toFixed(1);
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(originalImage, 0, 0);
-
-  // Morphing suave futurístico
-  const tx = max * 8 + mand * -6 + gen * 9;
-  const ty = max * -2 + mand * 3 + gen * 1;
-  const scale = 1 + (Math.abs(max + mand + gen) * 0.008);
-
-  ctx.save();
-  ctx.translate(canvas.width / 2, canvas.height * 0.85);
-  ctx.scale(scale, scale);
-  ctx.translate(-canvas.width / 2, -canvas.height * 0.85);
-  ctx.globalAlpha = 0.92;
-  ctx.drawImage(originalImage, tx, ty);
-  ctx.restore();
+  docs.forEach(d=>{
+    const el = document.createElement("div");
+    el.className = "docItem";
+    el.innerHTML = `
+      <div>
+        <b>${escapeHTML(d.type || "Documento")} • ${escapeHTML(d.title || "Sem título")}</b>
+        <small>${escapeHTML(d.filename || "arquivo")} • ${escapeHTML(d.mime || "")} • ${fmtTime(d.createdAt)}</small>
+      </div>
+      <div class="docActions">
+        <button class="ghost" data-act="view">Ver</button>
+        <button class="ghost" data-act="dl">Baixar</button>
+        <button class="danger" data-act="del">Remover</button>
+      </div>
+    `;
+    el.querySelector('[data-act="view"]').onclick = ()=> openDocModal(d);
+    el.querySelector('[data-act="dl"]').onclick = ()=> downloadDoc(d);
+    el.querySelector('[data-act="del"]').onclick = async ()=>{
+      if(!confirm("Remover este documento?")) return;
+      await idbDelete("docs", d.id);
+      await renderDocs();
+    };
+    wrap.appendChild(el);
+  });
 }
 
-['maxila','mandibula','genio'].forEach(id => {
-  document.getElementById(id).addEventListener('input', updateSimulation);
+$("btnAddDoc").addEventListener("click", async ()=>{
+  const c = getSelectedCase();
+  if(!c) return alert("Selecione um caso primeiro.");
+
+  const file = $("docFile").files && $("docFile").files[0];
+  if(!file) return alert("Selecione um arquivo (imagem ou PDF).");
+
+  const type = $("docType").value || "Outros";
+  const title = ($("docTitle").value || "").trim() || file.name;
+
+  // read as ArrayBuffer
+  const buf = await file.arrayBuffer();
+
+  const doc = {
+    id: uid(),
+    caseId: c.id,
+    type,
+    title,
+    filename: file.name,
+    mime: file.type || "application/octet-stream",
+    size: file.size || buf.byteLength,
+    createdAt: nowISO(),
+    data: buf
+  };
+
+  await idbPut("docs", doc);
+  $("docFile").value = "";
+  $("docTitle").value = "";
+  await renderDocs();
 });
 
-function resetAll() {
-  document.querySelectorAll('#maxila, #mandibula, #genio').forEach(el => el.value = 0);
-  updateSimulation();
+let modalDoc = null;
+function openDocModal(doc){
+  modalDoc = doc;
+  $("modalTitle").textContent = `${doc.type || "Documento"} • ${doc.title || doc.filename || ""}`;
+  const body = $("modalBody");
+  body.innerHTML = "";
+
+  const blob = new Blob([doc.data], { type: doc.mime });
+  const url = URL.createObjectURL(blob);
+
+  if((doc.mime||"").includes("pdf")){
+    const ifr = document.createElement("iframe");
+    ifr.src = url;
+    body.appendChild(ifr);
+  } else if((doc.mime||"").startsWith("image/")){
+    const img = document.createElement("img");
+    img.src = url;
+    body.appendChild(img);
+  } else {
+    body.innerHTML = `<div class="mini">Sem visualização para este tipo de arquivo. Use “Baixar”.</div>`;
+  }
+
+  $("modalBack").style.display = "flex";
 }
 
-function demoRapida() {
-  document.getElementById('maxila').value = 6;
-  document.getElementById('mandibula').value = 8;
-  document.getElementById('genio').value = 4;
-  updateSimulation();
+$("btnCloseModal").addEventListener("click", ()=>{
+  $("modalBack").style.display = "none";
+  $("modalBody").innerHTML = "";
+  modalDoc = null;
+});
+
+$("modalBack").addEventListener("click", (e)=>{
+  if(e.target === $("modalBack")){
+    $("btnCloseModal").click();
+  }
+});
+
+$("btnDownloadDoc").addEventListener("click", ()=>{
+  if(!modalDoc) return;
+  downloadDoc(modalDoc);
+});
+
+function downloadDoc(doc){
+  const blob = new Blob([doc.data], { type: doc.mime });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = doc.filename || "documento";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    URL.revokeObjectURL(a.href);
+    document.body.removeChild(a);
+  }, 250);
 }
 
-function exportarImagem() {
-  const link = document.createElement('a');
-  link.download = 'simulacao-futuristica.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+/* ============================
+   Planning sliders binding
+============================ */
+function setSlider(id, value, silent=false){
+  const el = $(id);
+  if(!el) return;
+  el.value = String(value);
+  if(!silent) el.dispatchEvent(new Event("input"));
 }
 
-updateSimulation();
+function bindRange(id, key, outId, suffix="", decimals=1){
+  const el = $(id);
+  const out = $(outId);
+  const update = async ()=>{
+    const v = Number(el.value);
+    plan[key] = v;
+    out.textContent = (decimals===2? fmt2(v) : fmt1(v)) + suffix;
+    refreshAlerts();
+    refresh3DAndProfile();
+    await persistSelectedFromUI();
+  };
+  el.addEventListener("input", update);
+  // init display
+  out.textContent = (decimals===2? fmt2(el.value) : fmt1(el.value)) + suffix;
+  plan[key] = Number(el.value);
+}
+
+bindRange("mxAdv","mxAdv","mxAdvVal","");
+bindRange("mxImp","mxImp","mxImpVal","");
+bindRange("mxRot","mxRot","mxRotVal","°");
+
+bindRange("mdAdv","mdAdv","mdAdvVal","");
+bindRange("mdRot","mdRot","mdRotVal","°");
+bindRange("mdLat","mdLat","mdLatVal","");
+
+bindRange("chAdv","chAdv","chAdvVal","");
+bindRange("chVert","chVert","chVertVal","");
+bindRange("chLat","chLat","chLatVal","");
+
+bindRange("lipResp","lipResp","lipRespVal","",2);
+bindRange("noseResp","noseResp","noseRespVal","",2);
+bindRange("chinResp","chinResp","chinRespVal","",2);
+
+["planRationale","planChecklist"].forEach(id=>{
+  $(id).addEventListener("input", async ()=>{
+    await persistSelectedFromUI();
+  });
+});
+
+// Patient fields autosave
+[
+  "pName","pId","pAge","pSex",
+  "dxClass","dxPattern","dxAsym","dxGing","dxLipSeal",
+  "pComplaint","pExpect","pOrthoHx","pNotes","pProsCons","pConsent"
+].forEach(id=>{
+  $(id).addEventListener("input", persistSelectedFromUI);
+  $(id).addEventListener("change", persistSelectedFromUI);
+});
+
+/* ============================
+   Alerts
+============================ */
+function refreshAlerts(){
+  const wrap = $("alerts");
+  const items = [];
+
+  const add = (sev, title, msg)=> items.push({sev,title,msg});
+
+  const s_mxAdv = severity(plan.mxAdv, lim.mxAdv_ok, lim.mxAdv_h);
+  add(s_mxAdv, "Maxila • avanço/recuo",
+      s_mxAdv==="ok" ? "Faixa comum." :
+      s_mxAdv==="warn" ? "Movimento alto: conferir sorriso/base nasal." :
+      "Fora do limite do MVP. Reavaliar.");
+
+  const s_mxImp = severity(plan.mxImp, lim.mxImp_ok, lim.mxImp_h);
+  add(s_mxImp, "Maxila • impactação",
+      s_mxImp==="ok" ? "Faixa comum." :
+      s_mxImp==="warn" ? "Impactação alta: atenção base nasal/sorriso gengival." :
+      "Fora do limite do MVP.");
+
+  const s_mxRot = severity(plan.mxRot, lim.mxRot_ok, lim.mxRot_h);
+  add(s_mxRot, "Maxila • rotação",
+      s_mxRot==="ok" ? "Rotação discreta." :
+      s_mxRot==="warn" ? "Rotação alta: avalie plano oclusal e estética." :
+      "Fora do limite do MVP.");
+
+  const s_mdAdv = severity(plan.mdAdv, lim.mdAdv_ok, lim.mdAdv_h);
+  add(s_mdAdv, "Mandíbula • avanço/recuo",
+      s_mdAdv==="ok" ? "Faixa geralmente segura." :
+      s_mdAdv==="warn" ? "Movimento alto: avaliar ATM, lábio e via aérea." :
+      "Fora do limite do MVP.");
+
+  const s_mdRot = severity(plan.mdRot, lim.mdRot_ok, lim.mdRot_h);
+  add(s_mdRot, "Mandíbula • rotação",
+      s_mdRot==="ok" ? "Rotação discreta." :
+      s_mdRot==="warn" ? "Rotação alta: pode impactar via aérea/perfil." :
+      "Fora do limite do MVP.");
+
+  const s_mdLat = severity(plan.mdLat, lim.mdLat_ok, lim.mdLat_h);
+  add(s_mdLat, "Mandíbula • lateralização",
+      s_mdLat==="ok" ? "Assimetria pequena." :
+      s_mdLat==="warn" ? "Assimetria moderada: avaliar mordida cruzada e estética." :
+      "Fora do limite do MVP.");
+
+  const s_chAdv = severity(plan.chAdv, lim.chAdv_ok, lim.chAdv_h);
+  add(s_chAdv, "Mento • avanço/recuo",
+      s_chAdv==="ok" ? "Ajuste fino do perfil." :
+      s_chAdv==="warn" ? "Movimento alto: atenção ao sulco mentolabial." :
+      "Fora do limite do MVP.");
+
+  const s_chV = severity(plan.chVert, lim.chV_ok, lim.chV_h);
+  add(s_chV, "Mento • altura",
+      s_chV==="ok" ? "Ajuste vertical discreto." :
+      s_chV==="warn" ? "Alteração vertical alta: avaliar terço inferior." :
+      "Fora do limite do MVP.");
+
+  const s_chLat = severity(plan.chLat, lim.chLat_ok, lim.chLat_h);
+  add(s_chLat, "Mento • lateralização",
+      s_chLat==="ok" ? "Correção discreta." :
+      s_chLat==="warn" ? "Cuidado com assimetria residual." :
+      "Fora do limite do MVP.");
+
+  add("ok","Tecido mole (tendência)",
+      `Lábio ${fmt2(plan.lipResp)} • Nariz ${fmt2(plan.noseResp)} • Mento ${fmt2(plan.chinResp)}.`);
+
+  wrap.innerHTML = "";
+  items.forEach(a=>{
+    const div = document.createElement("div");
+    div.className = `alert ${a.sev}`;
+    div.innerHTML = `<b>${a.title}</b><br/>${a.msg}`;
+    wrap.appendChild(div);
+  });
+
+  // update legend values
+  $("lgLip").textContent = fmt2(plan.lipResp);
+  $("lgNose").textContent = fmt2(plan.noseResp);
+  $("lgChin").textContent = fmt2(plan.chinResp);
+}
+
+/* ============================
+   3D Simulation (parametric mannequin)
+============================ */
+let scene, camera, renderer, controls;
+let grpMax, grpMand, grpChin;
+let noseMesh, upperLip, lowerLip, chinSoft;
+let inited3D = false;
+
+function init3D(){
+  const container = $("viewer3d");
+  if(!container) return;
+
+  renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  container.appendChild(renderer.domElement);
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(45, container.clientWidth/container.clientHeight, 0.1, 1000);
+  camera.position.set(0, 10, 40);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.target.set(0, 10, 0);
+
+  const key = new THREE.DirectionalLight(0xffffff, 1.0);
+  key.position.set(20, 30, 20);
+  scene.add(key);
+
+  const fill = new THREE.DirectionalLight(0xffffff, 0.55);
+  fill.position.set(-20, 10, 25);
+  scene.add(fill);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+  const matSkin = new THREE.MeshStandardMaterial({ color:0xd8c2b0, roughness:0.55, metalness:0.03 });
+  const matBone = new THREE.MeshStandardMaterial({ color:0xe6eefc, roughness:0.35, metalness:0.04 });
+
+  // Face shell
+  const head = new THREE.Mesh(new THREE.SphereGeometry(10, 48, 36), matSkin);
+  head.scale.set(1.05, 1.25, 1.0);
+  head.position.set(0, 10, 0);
+  scene.add(head);
+
+  // Soft tissue landmarks
+  const noseGeo = new THREE.ConeGeometry(2.2, 4.2, 28);
+  noseMesh = new THREE.Mesh(noseGeo, matSkin);
+  noseMesh.rotation.x = Math.PI/2;
+  noseMesh.position.set(0, 13, 10.8);
+  scene.add(noseMesh);
+
+  const lipGeo = new THREE.BoxGeometry(6.5, 1.2, 2.4);
+  upperLip = new THREE.Mesh(lipGeo, matSkin);
+  upperLip.position.set(0, 9.7, 10.6);
+  scene.add(upperLip);
+
+  lowerLip = new THREE.Mesh(lipGeo, matSkin);
+  lowerLip.scale.set(0.95, 1.05, 1.0);
+  lowerLip.position.set(0, 8.2, 10.5);
+  scene.add(lowerLip);
+
+  chinSoft = new THREE.Mesh(new THREE.BoxGeometry(5.5, 3.8, 4.6), matSkin);
+  chinSoft.position.set(0, 5.0, 10.2);
+  scene.add(chinSoft);
+
+  // Bone groups (simplified)
+  grpMax = new THREE.Group();
+  const mx = new THREE.Mesh(new THREE.BoxGeometry(10,4,8), matBone);
+  mx.position.set(0, 9, 2);
+  grpMax.add(mx);
+  scene.add(grpMax);
+
+  grpMand = new THREE.Group();
+  const md = new THREE.Mesh(new THREE.BoxGeometry(11,4,9), matBone);
+  md.position.set(0, 5.6, 2);
+  grpMand.add(md);
+  scene.add(grpMand);
+
+  grpChin = new THREE.Group();
+  const ch = new THREE.Mesh(new THREE.BoxGeometry(6,3.5,6), matBone);
+  ch.position.set(0, 3.6, 4);
+  grpChin.add(ch);
+  scene.add(grpChin);
+
+  window.addEventListener("resize", ()=>{
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    camera.aspect = container.clientWidth/container.clientHeight;
+    camera.updateProjectionMatrix();
+  });
+
+  inited3D = true;
+  animate3D();
+}
+
+function animate3D(){
+  requestAnimationFrame(animate3D);
+  if(!renderer || !scene || !camera) return;
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+function apply3D(){
+  if(!inited3D) return;
+  const s = 0.22; // mm -> units
+
+  // bone transforms (approx)
+  const mxX = (showAfter3D ? plan.mxAdv : 0) * s;
+  const mxY = (showAfter3D ? plan.mxImp : 0) * s;
+  grpMax.position.set(mxX, mxY, 0);
+
+  // mandibular advance + lat
+  const mdX = (showAfter3D ? plan.mdAdv : 0) * s;
+  const mdLat = (showAfter3D ? plan.mdLat : 0) * s;
+  grpMand.position.set(mdLat, 0, 0); // sideways in X; forward we'll emulate via tissue in Z
+  // simple hack: push mandible forward/back in Z to make it feel real
+  grpMand.position.z = mdX;
+
+  const chX = (showAfter3D ? plan.chLat : 0) * s;
+  const chY = (showAfter3D ? plan.chVert : 0) * s;
+  const chZ = (showAfter3D ? plan.chAdv : 0) * s;
+  grpChin.position.set(chX, chY, chZ);
+
+  // tissue tendencies
+  const lipK = plan.lipResp;
+  const noseK = plan.noseResp;
+  const chinK = plan.chinResp;
+
+  // Maxilla influences nose + upper lip
+  noseMesh.position.z = 10.8 + ((showAfter3D ? plan.mxAdv : 0) * noseK) * 0.18;
+  noseMesh.position.y = 13 + (-(showAfter3D ? plan.mxImp : 0) * 0.10);
+
+  upperLip.position.z = 10.6 + ((showAfter3D ? plan.mxAdv : 0) * lipK) * 0.20;
+  upperLip.position.y = 9.7 + (-(showAfter3D ? plan.mxImp : 0) * 0.12);
+
+  // Mandible influences lower lip
+  lowerLip.position.z = 10.5 + ((showAfter3D ? plan.mdAdv : 0) * lipK) * 0.18;
+  lowerLip.position.x = (showAfter3D ? plan.mdLat : 0) * 0.08;
+
+  // Chin influences chin soft tissue
+  const chinMix = ( (showAfter3D ? plan.mdAdv : 0) * 0.35 + (showAfter3D ? plan.chAdv : 0) * 0.65 );
+  chinSoft.position.z = 10.2 + (chinMix * chinK) * 0.20;
+  chinSoft.position.y = 5.0 - (showAfter3D ? plan.chVert : 0) * 0.10;
+  chinSoft.position.x = (showAfter3D ? plan.chLat : 0) * 0.09;
+}
+
+/* ============================
+   Profile canvas
+============================ */
+function drawProfile(){
+  const c = $("profileCanvas");
+  if(!c) return;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+
+  // grid
+  ctx.globalAlpha = 0.18;
+  ctx.strokeStyle = "#ffffff";
+  for(let x=60;x<c.width;x+=80){ ctx.beginPath(); ctx.moveTo(x,30); ctx.lineTo(x,c.height-30); ctx.stroke(); }
+  for(let y=60;y<c.height;y+=80){ ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(c.width-30,y); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+
+  // base profile
+  const base = {
+    nose: {x: 620, y: 150},
+    upperLip:{x: 585, y: 220},
+    lowerLip:{x: 575, y: 250},
+    chin:{x: 560, y: 340},
+    jaw:{x: 520, y: 400}
+  };
+
+  const lipK = plan.lipResp;
+  const noseK = plan.noseResp;
+  const chinK = plan.chinResp;
+
+  const mx = showAfter3D ? plan.mxAdv : 0;
+  const md = showAfter3D ? plan.mdAdv : 0;
+  const ch = showAfter3D ? plan.chAdv : 0;
+  const imp = showAfter3D ? plan.mxImp : 0;
+
+  const dxNose = (mx * noseK) * 2.2;
+  const dxUL = (mx * lipK) * 2.6;
+  const dxLL = (md * lipK) * 2.4 + (showAfter3D ? plan.mdLat : 0) * 0.7;
+  const dxCh = ((md*0.35 + ch*0.65) * chinK) * 2.8 + (showAfter3D ? plan.chLat : 0) * 0.8;
+
+  const dyNose = (-imp * 1.4);
+  const dyUL = (-imp * 1.8);
+  const dyCh = -(showAfter3D ? plan.chVert : 0) * 1.8;
+
+  const after = {
+    nose: {x: base.nose.x + dxNose, y: base.nose.y + dyNose},
+    upperLip:{x: base.upperLip.x + dxUL, y: base.upperLip.y + dyUL},
+    lowerLip:{x: base.lowerLip.x + dxLL, y: base.lowerLip.y},
+    chin:{x: base.chin.x + dxCh, y: base.chin.y + dyCh},
+    jaw:{x: base.jaw.x + (md*1.2), y: base.jaw.y + dyCh*0.2}
+  };
+
+  // title
+  ctx.fillStyle = "rgba(255,255,255,.65)";
+  ctx.font = "16px Arial";
+  ctx.fillText("Perfil • tendência do tecido mole (fictício)", 34, 36);
+
+  // BEFORE
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(base.nose.x, base.nose.y);
+  ctx.lineTo(base.upperLip.x, base.upperLip.y);
+  ctx.lineTo(base.lowerLip.x, base.lowerLip.y);
+  ctx.lineTo(base.chin.x, base.chin.y);
+  ctx.lineTo(base.jaw.x, base.jaw.y);
+  ctx.stroke();
+
+  // AFTER
+  if(showAfter3D){
+    ctx.strokeStyle = "rgba(46,139,255,.95)";
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(after.nose.x, after.nose.y);
+    ctx.lineTo(after.upperLip.x, after.upperLip.y);
+    ctx.lineTo(after.lowerLip.x, after.lowerLip.y);
+    ctx.lineTo(after.chin.x, after.chin.y);
+    ctx.lineTo(after.jaw.x, after.jaw.y);
+    ctx.stroke();
+  }
+
+  function dot(p, color){
+    ctx.fillStyle=color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, Math.PI*2); ctx.fill();
+  }
+  dot(base.nose, "rgba(255,255,255,.35)");
+  dot(base.upperLip, "rgba(255,255,255,.30)");
+  dot(base.lowerLip, "rgba(255,255,255,.25)");
+  dot(base.chin, "rgba(255,255,255,.22)");
+  if(showAfter3D){
+    dot(after.nose, "rgba(46,139,255,.95)");
+    dot(after.upperLip, "rgba(46,139,255,.95)");
+    dot(after.lowerLip, "rgba(46,139,255,.95)");
+    dot(after.chin, "rgba(46,139,255,.95)");
+  }
+}
+
+function refresh3DAndProfile(){
+  apply3D();
+  drawProfile();
+}
+
+/* ============================
+   Actions: New / Delete / Example
+============================ */
+$("btnNew").addEventListener("click", async ()=>{
+  const c = newCaseTemplate();
+  c.patient.name = "Novo paciente";
+  c.patient.dxClass = "Classe II";
+  c.patient.dxPattern = "Mesofacial";
+  c.patient.complaint = "Queixo para trás e dificuldade mastigatória.";
+  c.patient.expect = "Melhorar função e perfil.";
+  c.planning.mdAdv = 6;
+  c.planning.chAdv = 4;
+  c.planning.lipResp = 0.78;
+  c.planning.noseResp = 0.35;
+  c.planning.chinResp = 0.85;
+
+  await idbPut("cases", c);
+  allCases.push(c);
+  renderCaseList();
+  await selectCase(c.id);
+});
+
+$("btnDelete").addEventListener("click", async ()=>{
+  const c = getSelectedCase();
+  if(!c) return;
+  if(!confirm("Apagar este caso? Isso não tem volta (a não ser via backup).")) return;
+
+  // delete docs too
+  const docs = await idbGetDocsByCase(c.id);
+  for(const d of docs){
+    await idbDelete("docs", d.id);
+  }
+  await idbDelete("cases", c.id);
+
+  allCases = allCases.filter(x=>x.id!==c.id);
+  selectedId = null;
+  $("btnDelete").disabled = true;
+  $("caseTitle").textContent = "Nenhum caso selecionado";
+  renderCaseList();
+
+  // clear UI
+  location.reload(); // simplest reset to avoid leftover blobs; data is persisted anyway
+});
+
+$("btnRandom").addEventListener("click", async ()=>{
+  // Create a nice example case
+  const c = newCaseTemplate();
+  c.patient.name = "Caso exemplo • Classe II";
+  c.patient.pid = "EX-CL2";
+  c.patient.age = "22";
+  c.patient.sex = "Feminino";
+  c.patient.dxClass = "Classe II";
+  c.patient.dxPattern = "Dolicofacial";
+  c.patient.dxAsym = "Leve";
+  c.patient.dxGing = "Moderado";
+  c.patient.dxLipSeal = "Difícil";
+  c.patient.complaint = "Retrognatia mandibular, incompetência labial e desconforto na mastigação.";
+  c.patient.expect = "Melhorar perfil, selamento labial e função mastigatória.";
+  c.patient.orthoHx = "Ortodontia há 18 meses. Preparo cirúrgico em andamento.";
+  c.patient.notes = "Avaliar ATM e via aérea. Discutir alteração nasal potencial.";
+  c.patient.prosCons = "Prós: melhora função/estética. Contras: edema, parestesia, variação tecidual e possibilidade de refinamentos.";
+  c.patient.consent = "Paciente ciente de variações de tecido mole e de riscos, concorda com plano proposto.";
+
+  c.timeline = [
+    {id:uid(), date: todayDate(), note:"Consulta inicial ortog. Revisão de documentação.", createdAt: nowISO()},
+    {id:uid(), date: todayDate(), note:"Manutenção ortodôntica: elásticos Classe II.", createdAt: nowISO()},
+  ];
+
+  c.planning = {
+    ...c.planning,
+    mxAdv: 2.0, mxImp: 3.0, mxRot: -1.5,
+    mdAdv: 7.0, mdRot: 1.0, mdLat: 0.0,
+    chAdv: 4.0, chVert: 0.5, chLat: 0.0,
+    lipResp: 0.78, noseResp: 0.35, chinResp: 0.88,
+    planRationale: "Avanço mandibular para correção Classe II e melhora do perfil. Impactação maxilar para reduzir sorriso gengival. Genioplastia para refinamento do terço inferior.",
+    planChecklist: "Finalizar ortodontia pré-op. Exames e avaliação anestésica. Reforçar consentimento e expectativa realista."
+  };
+
+  await idbPut("cases", c);
+  allCases.push(c);
+  renderCaseList();
+  await selectCase(c.id);
+});
+
+/* ============================
+   Search
+============================ */
+$("q").addEventListener("input", renderCaseList);
+$("btnClear").addEventListener("click", ()=>{
+  $("q").value = "";
+  renderCaseList();
+});
+
+/* ============================
+   3D toggle
+============================ */
+$("btnToggle3D").addEventListener("click", ()=>{
+  showAfter3D = !showAfter3D;
+  $("modeLabel").textContent = showAfter3D ? "Depois" : "Antes";
+  refresh3DAndProfile();
+});
+
+/* ============================
+   Backup / Restore
+============================ */
+$("btnBackup").addEventListener("click", async ()=>{
+  const cases = await idbGetAll("cases");
+  const docs  = await idbGetAll("docs");
+
+  // convert ArrayBuffer -> base64 for JSON export
+  const docsOut = [];
+  for(const d of docs){
+    docsOut.push({
+      ...d,
+      data: await arrayBufferToBase64(d.data)
+    });
+  }
+
+  const payload = {
+    meta: { app:"BTX OrthoSuite", version:"1.0", exportedAt: nowISO() },
+    cases,
+    docs: docsOut
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `btx_orthosuite_backup_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    URL.revokeObjectURL(a.href);
+    document.body.removeChild(a);
+  }, 250);
+});
+
+$("inpRestore").addEventListener("change", async ()=>{
+  const f = $("inpRestore").files && $("inpRestore").files[0];
+  if(!f) return;
+  try{
+    const txt = await f.text();
+    const payload = JSON.parse(txt);
+
+    if(!payload || !Array.isArray(payload.cases) || !Array.isArray(payload.docs)){
+      alert("Backup inválido.");
+      return;
+    }
+    if(!confirm("Importar backup? Isso vai adicionar/substituir dados com mesmos IDs.")) return;
+
+    // restore cases
+    for(const c of payload.cases){
+      await idbPut("cases", c);
+    }
+    // restore docs
+    for(const d of payload.docs){
+      const buf = await base64ToArrayBuffer(d.data);
+      const doc = {...d, data: buf};
+      await idbPut("docs", doc);
+    }
+
+    alert("Backup importado com sucesso!");
+    location.reload();
+  }catch(e){
+    console.error(e);
+    alert("Erro ao importar backup.");
+  }finally{
+    $("inpRestore").value = "";
+  }
+});
+
+function arrayBufferToBase64(buf){
+  return new Promise((resolve)=>{
+    const bytes = new Uint8Array(buf);
+    let bin = "";
+    const chunk = 0x8000;
+    for(let i=0;i<bytes.length;i+=chunk){
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+    }
+    resolve(btoa(bin));
+  });
+}
+function base64ToArrayBuffer(b64){
+  return new Promise((resolve)=>{
+    const bin = atob(b64);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+    resolve(bytes.buffer);
+  });
+}
+
+/* ============================
+   PDF
+============================ */
+$("btnPDF").addEventListener("click", async ()=>{
+  const c = getSelectedCase();
+  if(!c) return alert("Selecione um caso primeiro.");
+
+  // fill report
+  const p = c.patient || {};
+  $("rPatient").textContent = `${p.name || "—"} • ID ${p.pid || "—"}`;
+  $("rMeta").textContent = `${p.age ? p.age + " anos" : "idade —"} • ${p.sex || "—"}`;
+
+  $("rDx").textContent = `${p.dxClass || "—"} • ${p.dxPattern || "—"}`;
+  $("rDx2").textContent = `Assimetria: ${p.dxAsym || "—"} • Sorriso gengival: ${p.dxGing || "—"} • Selamento: ${p.dxLipSeal || "—"}`;
+
+  $("rComplaint").textContent = p.complaint || "—";
+  $("rExpect").textContent = p.expect || "—";
+
+  $("rMxAdv").textContent = fmt1(plan.mxAdv);
+  $("rMxImp").textContent = fmt1(plan.mxImp);
+  $("rMxRot").textContent = fmt1(plan.mxRot);
+
+  $("rMdAdv").textContent = fmt1(plan.mdAdv);
+  $("rMdRot").textContent = fmt1(plan.mdRot);
+  $("rMdLat").textContent = fmt1(plan.mdLat);
+
+  $("rChAdv").textContent = fmt1(plan.chAdv);
+  $("rChVert").textContent = fmt1(plan.chVert);
+  $("rChLat").textContent = fmt1(plan.chLat);
+
+  $("rLip").textContent = fmt2(plan.lipResp);
+  $("rNose").textContent = fmt2(plan.noseResp);
+  $("rChinResp").textContent = fmt2(plan.chinResp);
+
+  $("rRationale").textContent = (c.planning && c.planning.planRationale) ? c.planning.planRationale : ($("planRationale").value || "—");
+  $("rChecklist").textContent = (c.planning && c.planning.planChecklist) ? c.planning.planChecklist : ($("planChecklist").value || "—");
+  $("rNotes").textContent = p.notes || "—";
+
+  // Alerts copy
+  const alertsText = Array.from($("alerts").children).map(div => div.textContent.trim()).join("\n• ");
+  $("rAlerts").textContent = "• " + alertsText;
+
+  const report = $("reportArea");
+  report.style.display = "block";
+
+  // embed profile canvas image
+  const profilePng = $("profileCanvas").toDataURL("image/png");
+  const img = document.createElement("img");
+  img.src = profilePng;
+  img.style.width = "100%";
+  img.style.border = "1px solid #e5e7eb";
+  img.style.borderRadius = "12px";
+  img.style.marginTop = "10px";
+  report.appendChild(img);
+
+  const snap = await html2canvas(report, { scale:2, backgroundColor:"#ffffff" });
+
+  report.removeChild(img);
+  report.style.display = "none";
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+
+  const imgW = pageW;
+  const imgH = (snap.height * imgW) / snap.width;
+
+  let y = 0;
+  let remaining = imgH;
+
+  const url = snap.toDataURL("image/jpeg", 0.92);
+  while(remaining > 0){
+    pdf.addImage(url, "JPEG", 0, y, imgW, imgH);
+    remaining -= pageH;
+    if(remaining > 0){
+      pdf.addPage();
+      y -= pageH;
+    }
+  }
+
+  const fn = `OrthoSuite_${(p.name || "paciente").replace(/\s+/g,"_")}_${(p.pid||"ID").replace(/\s+/g,"_")}.pdf`;
+  pdf.save(fn);
+});
+
+/* ============================
+   Boot
+============================ */
+(async function boot(){
+  try{
+    db = await openDB();
+    $("dbStatus").textContent = "OK (IndexedDB)";
+    allCases = await idbGetAll("cases");
+    renderCaseList();
+    setTab("prontuario");
+    init3D();
+    refreshAlerts();
+    refresh3DAndProfile();
+
+    // autoselect most recent
+    if(allCases.length){
+      const sorted = allCases.slice().sort((a,b)=> (b.updatedAt||"").localeCompare(a.updatedAt||""));
+      await selectCase(sorted[0].id);
+    }
+  }catch(e){
+    console.error(e);
+    $("dbStatus").textContent = "ERRO";
+    alert("Erro ao inicializar banco offline (IndexedDB). Tente outro navegador.");
+  }
+})();
 </script>
 </body>
 </html>
