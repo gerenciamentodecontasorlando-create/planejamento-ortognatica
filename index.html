@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador Ortognático Avançado - Inspirado no Dolphin</title>
+  <title>Simulador Avançado de Planejamento Ortognático</title>
   <style>
     body { margin:0; font-family:Arial,sans-serif; background:#0a1f3a; color:#e0e0e0; }
     header { background:#1e3a5f; padding:15px; text-align:center; border-bottom:3px solid #3a5f9a; }
@@ -14,16 +14,16 @@
     .tab-content { display:none; padding:25px; max-width:1700px; margin:auto; }
     .tab-content.active { display:block; }
     .panel { background:#112b4a; border:1px solid #3a5f9a; border-radius:8px; padding:20px; margin:15px 0; box-shadow:0 4px 12px rgba(0,0,0,0.6); }
-    .image-box { position:relative; height:500px; background:#000; border:2px dashed #666; border-radius:8px; overflow:hidden; margin:10px 0; }
+    .image-box { position:relative; height:480px; background:#000; border:2px dashed #666; border-radius:8px; overflow:hidden; margin:10px 0; }
     .image-box.dragover { border-color:#ff6666; background:rgba(255,100,100,0.1); }
-    canvas, img { width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; }
-    .controls { display:grid; grid-template-columns:repeat(auto-fit, minmax(250px,1fr)); gap:15px; margin:20px 0; }
+    img, canvas { width:100%; height:100%; object-fit:contain; position:absolute; top:0; left:0; }
+    .controls { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:15px; margin:20px 0; }
     label { display:block; margin-bottom:8px; font-weight:bold; }
     input[type=number], input[type=range] { width:100%; padding:8px; background:#1e3a5f; border:1px solid #3a5f9a; color:white; border-radius:4px; }
     .value { color:#ffdd57; font-weight:bold; }
     .suggestion { background:#1e3a5f; padding:15px; border-radius:6px; margin:15px 0; }
     .before-after { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-    .small-box { height:280px; border:1px solid #555; border-radius:6px; overflow:hidden; position:relative; }
+    .small-box { height:320px; border:1px solid #555; border-radius:6px; overflow:hidden; position:relative; }
     button { background:#3a5f9a; color:white; padding:12px 20px; border:none; border-radius:6px; cursor:pointer; font-size:1em; margin:8px 4px 0 0; }
     button:hover { background:#4a7ac4; }
     .info { font-size:0.95em; background:#1e3a5f; padding:12px; border-radius:6px; margin-top:15px; line-height:1.5; }
@@ -33,7 +33,7 @@
 
 <header>
   <h1>Simulador Avançado de Planejamento Ortognático</h1>
-  <p>Inspirado no Dolphin Imaging • Educacional • Use imagens anonimizadas</p>
+  <p>Inspirado no Dolphin Imaging • Uso educacional • Imagens anonimizadas</p>
 </header>
 
 <div class="tabs">
@@ -49,7 +49,7 @@
     <h2>Carregue as imagens do paciente</h2>
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(400px,1fr)); gap:20px;">
       <div>
-        <h3>Radiografia Cefalométrica (lateral)</h3>
+        <h3>Radiografia Cefalométrica Lateral</h3>
         <div class="image-box" id="ceph-box">
           <img id="ceph-img" src="https://via.placeholder.com/600x800/111133/aaaaaa?text=Arraste+a+Cefalometria+aqui">
         </div>
@@ -58,20 +58,20 @@
       <div>
         <h3>Foto Lateral do Perfil (original)</h3>
         <div class="image-box" id="photo-box">
-          <img id="original-photo" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Arraste+a+Foto+Lateral">
+          <img id="original-photo" src="https://via.placeholder.com/500x700/222244/bbbbbb?text=Arraste+a+Foto+Lateral+do+Perfil">
           <canvas id="morph-canvas" style="display:none;"></canvas>
         </div>
         <input type="file" id="photo-upload" accept="image/*" style="display:none;">
       </div>
     </div>
-    <div class="info">Arraste as imagens diretamente nos quadros ou clique para selecionar. Use fotos alinhadas (perfil natural, sem inclinação).</div>
+    <div class="info">Arraste as imagens diretamente nos quadros ou clique neles para selecionar.</div>
   </div>
 </div>
 
 <!-- Aba 2: Cefalometria -->
 <div id="cefalometria" class="tab-content">
   <div class="panel">
-    <h2>Dados Cefalométricos Atuais e Desejados</h2>
+    <h2>Dados Cefalométricos</h2>
     <div class="controls">
       <label>SNA atual (°): <input type="number" id="sna-atual" value="82" step="0.1"></label>
       <label>SNA desejado (°): <input type="number" id="sna-desejado" value="84" step="0.1"></label>
@@ -79,9 +79,8 @@
       <label>SNB desejado (°): <input type="number" id="snb-desejado" value="82" step="0.1"></label>
       <label>ANB atual (°): <input type="number" id="anb-atual" value="4" step="0.1" readonly></label>
       <label>ANB desejado (°): <input type="number" id="anb-desejado" value="2" step="0.1"></label>
-      <label>Maxilar (IMP A): <input type="number" id="impa" value="90" step="0.5"></label>
     </div>
-    <button onclick="calcularMovimentos()">Calcular Movimentos Sugeridos (mm)</button>
+    <button onclick="calcularMovimentos()">Calcular Movimentos Sugeridos</button>
     <div id="sugestao" class="suggestion"></div>
   </div>
 </div>
@@ -89,21 +88,21 @@
 <!-- Aba 3: Planejamento -->
 <div id="planejamento" class="tab-content">
   <div class="panel">
-    <h2>Ajuste os movimentos cirúrgicos</h2>
+    <h2>Ajuste os Movimentos Cirúrgicos</h2>
     <div class="controls">
-      <label>Avanço/Recuo Maxila (mm): <span class="value" id="max-val">0</span>
-        <input type="range" min="-12" max="12" value="0" step="0.5" id="maxila">
+      <label>Maxila (mm): <span class="value" id="max-val">0</span>
+        <input type="range" min="-15" max="15" value="0" step="0.5" id="maxila">
       </label>
-      <label>Avanço/Recuo Mandíbula (mm): <span class="value" id="mand-val">0</span>
+      <label>Mandíbula (mm): <span class="value" id="mand-val">0</span>
         <input type="range" min="-15" max="15" value="0" step="0.5" id="mandibula">
       </label>
       <label>Impacção/Extrusão Maxila (mm): <span class="value" id="imp-val">0</span>
         <input type="range" min="-8" max="8" value="0" step="0.5" id="impacao">
       </label>
-      <label>Genioplastia (avanço/deslize mm): <span class="value" id="gen-val">0</span>
-        <input type="range" min="-10" max="10" value="0" step="0.5" id="genio">
+      <label>Genioplastia (mm): <span class="value" id="gen-val">0</span>
+        <input type="range" min="-12" max="12" value="0" step="0.5" id="genio">
       </label>
-      <button onclick="resetAll()">Resetar tudo</button>
+      <button onclick="resetAll()">Resetar Movimentos</button>
     </div>
   </div>
 </div>
@@ -111,24 +110,23 @@
 <!-- Aba 4: Simulação -->
 <div id="simulacao" class="tab-content">
   <div class="panel">
-    <h2>Simulação Antes × Depois (Morphing aproximado)</h2>
+    <h2>Simulação Antes × Depois (Morphing no Canvas)</h2>
     <div class="before-after">
       <div class="small-box">
         <h3>Antes</h3>
-        <img id="before-small" src="https://via.placeholder.com/400x300/222244/bbbbbb?text=Antes">
+        <img id="before-small" src="https://via.placeholder.com/400x320/222244/bbbbbb?text=Antes">
       </div>
       <div class="small-box">
         <h3>Depois (simulado)</h3>
-        <canvas id="after-canvas" width="400" height="300"></canvas>
+        <canvas id="after-canvas" width="400" height="320"></canvas>
       </div>
     </div>
     <button onclick="exportarImagem()">Baixar Imagem do Resultado (PNG)</button>
-    <div class="info">O morphing usa distorção simples no canvas (não é 100% preciso como no Dolphin real). Ajuste sliders e veja em tempo real.</div>
+    <div class="info">Ajuste os sliders na aba 3 e veja o resultado aqui em tempo real. O morphing é aproximado.</div>
   </div>
 </div>
 
 <script>
-// Navegação abas
 function showTab(tab) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
@@ -136,10 +134,11 @@ function showTab(tab) {
   document.querySelector(`button[onclick="showTab('${tab}')"]`).classList.add('active');
 }
 
-// Drag & Drop genérico
-function setupDragDrop(boxId, imgId, fileInputId, callback = null) {
+// Drag & Drop
+function setupDragDrop(boxId, imgId, fileInputId, callback) {
   const box = document.getElementById(boxId);
   const fileInput = document.getElementById(fileInputId);
+
   box.addEventListener('click', () => fileInput.click());
 
   box.addEventListener('dragover', e => { e.preventDefault(); box.classList.add('dragover'); });
@@ -162,32 +161,34 @@ function loadImage(file, imgId, callback) {
   const img = document.getElementById(imgId);
   img.src = url;
   img.onload = () => {
-    if (callback) callback();
     if (imgId === 'original-photo') {
       document.getElementById('before-small').src = url;
-      initMorph(); // Inicializa canvas com original
+      initMorph();
     }
+    if (callback) callback();
   };
 }
 
 setupDragDrop('ceph-box', 'ceph-img', 'ceph-upload');
-setupDragDrop('photo-box', 'original-photo', 'photo-upload', initMorph);
+setupDragDrop('photo-box', 'original-photo', 'photo-upload');
 
-// Inicializa morphing canvas
+// Morphing com Canvas
 let originalImg = null;
+const afterCanvas = document.getElementById('after-canvas');
+const afterCtx = afterCanvas.getContext('2d');
+
 function initMorph() {
   const photo = document.getElementById('original-photo');
   if (photo.src && photo.src !== 'about:blank') {
     originalImg = new Image();
-    originalImg.crossOrigin = "anonymous";
     originalImg.src = photo.src;
-    originalImg.onload = updateMorph;
+    originalImg.onload = () => {
+      afterCanvas.width = originalImg.width;
+      afterCanvas.height = originalImg.height;
+      updateMorph();
+    };
   }
 }
-
-// Atualiza morphing no canvas
-const morphCanvas = document.getElementById('morph-canvas');
-const afterCtx = document.getElementById('after-canvas').getContext('2d');
 
 function updateMorph() {
   if (!originalImg) return;
@@ -202,39 +203,39 @@ function updateMorph() {
   document.getElementById('imp-val').textContent = imp.toFixed(1);
   document.getElementById('gen-val').textContent = gen.toFixed(1);
 
-  // Redimensiona canvas para matching da imagem
-  afterCtx.canvas.width = originalImg.width;
-  afterCtx.canvas.height = originalImg.height;
-
-  // Desenha original
+  afterCtx.clearRect(0, 0, afterCanvas.width, afterCanvas.height);
   afterCtx.drawImage(originalImg, 0, 0);
 
-  // Simula distorção simples (warp affine aproximado para maxila/mandíbula)
-  // Isso é bem básico: desloca região inferior (mandíbula + genio) e superior (maxila)
-  const regionY = originalImg.height * 0.4; // \~região maxilar
-  const lowerY = originalImg.height * 0.6; // região mandibular
+  const maxilaY = afterCanvas.height * 0.32;
+  const mandY = afterCanvas.height * 0.58;
 
-  // Maxila: move superior
-  afterCtx.drawImage(originalImg, 0, 0, originalImg.width, regionY,
-                     max * 4, imp * -3, originalImg.width, regionY);
+  // Maxila
+  if (max !== 0 || imp !== 0) {
+    afterCtx.save();
+    afterCtx.translate(max * 9, imp * -7);
+    afterCtx.drawImage(originalImg, 0, maxilaY, afterCanvas.width, mandY - maxilaY, 0, maxilaY, afterCanvas.width, mandY - maxilaY);
+    afterCtx.restore();
+  }
 
-  // Mandíbula + Genio: move inferior
-  afterCtx.drawImage(originalImg, 0, lowerY, originalImg.width, originalImg.height - lowerY,
-                     mand * -5 + gen * 6, mand * 4 + imp * 2 + gen * 1, originalImg.width, originalImg.height - lowerY);
+  // Mandíbula + Genioplastia
+  if (mand !== 0 || gen !== 0) {
+    afterCtx.save();
+    const shear = (mand + gen) * 0.025;
+    afterCtx.setTransform(1, 0, shear, 1, mand * -8 + gen * 10, mand * 6 + gen * 3);
+    afterCtx.drawImage(originalImg, 0, mandY, afterCanvas.width, afterCanvas.height - mandY, 0, mandY, afterCanvas.width, afterCanvas.height - mandY);
+    afterCtx.restore();
+  }
 }
 
-// Eventos sliders
-['maxila','mandibula','impacao','genio'].forEach(id => {
+['maxila', 'mandibula', 'impacao', 'genio'].forEach(id => {
   document.getElementById(id).addEventListener('input', updateMorph);
 });
 
-// Reset
 function resetAll() {
   ['maxila','mandibula','impacao','genio'].forEach(id => document.getElementById(id).value = 0);
   updateMorph();
 }
 
-// Cálculo sugestão
 function calcularMovimentos() {
   const snaAtual = parseFloat(document.getElementById('sna-atual').value) || 82;
   const snaDes = parseFloat(document.getElementById('sna-desejado').value) || 82;
@@ -242,29 +243,34 @@ function calcularMovimentos() {
   const snbDes = parseFloat(document.getElementById('snb-desejado').value) || 80;
   const anbDes = parseFloat(document.getElementById('anb-desejado').value) || 2;
 
-  const diffSNA = snaDes - snaAtual;
-  const diffSNB = snbDes - snbAtual;
-  const diffANB = anbDes - (snaAtual - snbAtual);
+  const diffSNA = (snaDes - snaAtual) * 0.9;
+  const diffSNB = (snbDes - snbAtual) * 0.9;
 
-  let html = `<strong>Sugestão aproximada (base \~0.8-1 mm por grau):</strong><br>`;
-  html += `Maxila: \( {diffSNA > 0 ? '+' : ''} \){ (diffSNA * 0.9).toFixed(1) } mm<br>`;
-  html += `Mandíbula: \( {diffSNB > 0 ? '+' : ''} \){ (diffSNB * 0.9).toFixed(1) } mm<br>`;
-  html += `Ajuste ANB: \( {diffANB > 0 ? '+' : ''} \){diffANB.toFixed(1)}° (priorize maxila ou mandíbula conforme caso)<br>`;
+  let html = `<strong>Sugestão aproximada:</strong><br>`;
+  html += `Maxila: \( {diffSNA > 0 ? '+' : ''} \){diffSNA.toFixed(1)} mm<br>`;
+  html += `Mandíbula: \( {diffSNB > 0 ? '+' : ''} \){diffSNB.toFixed(1)} mm<br>`;
+  html += `ANB alvo: ${anbDes}°`;
 
   document.getElementById('sugestao').innerHTML = html;
+
+  // Aplica sugestão nos sliders
+  document.getElementById('maxila').value = diffSNA.toFixed(1);
+  document.getElementById('mandibula').value = diffSNB.toFixed(1);
+  updateMorph();
 }
 
-// Exportar PNG
 function exportarImagem() {
-  const canvas = document.getElementById('after-canvas');
   const link = document.createElement('a');
   link.download = 'simulacao-ortognatica.png';
-  link.href = canvas.toDataURL('image/png');
+  link.href = afterCanvas.toDataURL('image/png');
   link.click();
 }
 
-// Inicializa
-updateMorph();
+// Inicializa morphing se foto já estiver carregada
+window.onload = () => {
+  const photo = document.getElementById('original-photo');
+  if (photo.complete && photo.src !== 'about:blank') initMorph();
+};
 </script>
 </body>
 </html>
